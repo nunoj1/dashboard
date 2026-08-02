@@ -75,15 +75,34 @@ Or use Docker / systemd on your VM.
 ```
 src/
 ├── lib/
-│   ├── db/              # Drizzle schema, connection, migrations
-│   ├── trpc/            # tRPC router, context, client
-│   └── server/          # Server-only utilities (API clients)
+│   ├── components/        # Reusable UI components
+│   │   ├── layout/
+│   │   ├── todos/
+│   │   └── ui/
+│   ├── db/
+│   │   ├── schema/          # Drizzle schemas by domain
+│   │   │   ├── index.ts
+│   │   │   ├── todos.ts
+│   │   │   └── users.ts
+│   │   └── index.ts         # DB connection
+│   ├── server/              # Server-only utilities
+│   ├── trpc/
+│   │   ├── init.ts          # tRPC initialization
+│   │   ├── context.ts
+│   │   ├── client.ts
+│   │   ├── router.ts        # Root router
+│   │   └── routers/         # Feature routers
+│   │       ├── todo.ts
+│   │       ├── category.ts
+│   │       └── subtask.ts
+│   └── utils/
+│       └── date.ts
 ├── routes/
-│   ├── api/trpc/        # tRPC endpoint handler
-│   ├── dashboard/       # Protected dashboard page
-│   ├── +page.svelte   # Landing / sign-in page
-│   └── +layout.svelte # ClerkProvider wrapper
-└── app.html           # Dark mode forced at HTML level
+│   ├── api/trpc/            # tRPC endpoint
+│   ├── dashboard/
+│   ├── +page.svelte
+│   └── +layout.svelte
+└── app.html
 ```
 
 ---
@@ -102,10 +121,24 @@ src/
 ### ✅ Phase 1: tRPC + Data Layer
 - [x] tRPC router with superjson transformer
 - [x] SQLite database connection via Drizzle
-- [x] `users` table schema
+- [x] Schema split by domain (`users.ts`, `todos.ts`)
 - [x] API route at `/api/trpc/[...trpc]`
 - [x] Client-side tRPC hook
-- [x] Working test query on dashboard
+- [x] Router split by feature (`todo.ts`, `category.ts`, `subtask.ts`)
+
+### ✅ Phase 6: To-Do List (Expanded)
+- [x] Create / toggle / delete tasks
+- [x] **Subtasks** with progress bar and individual checkboxes
+- [x] **Due dates** with split date/time inputs
+- [x] **Urgency scoring**: Critical → High → Urgent → Soon → Normal → Low
+- [x] **Priority mode** vs **Schedule mode** (mutually exclusive)
+- [x] **Categories** with autofill input (creates new if not exists)
+- [x] **Location** field
+- [x] **Active grouping** toggle: None / Category / Location
+- [x] **History** tab with server-side pagination
+- [x] **History search** by title
+- [x] **Confirmation modal** before marking done
+- [x] Date metadata: Due, Created, Completed
 
 ### ⏳ Phase 2: YouTube Feed
 - [ ] YouTube Data API integration
@@ -129,11 +162,6 @@ src/
 - [ ] Google Calendar API integration
 - [ ] Upcoming events list
 - [ ] Event caching
-
-### ⏳ Phase 6: To-Do List
-- [ ] CRUD tRPC routes
-- [ ] Todo UI with priorities
-- [ ] Due dates
 
 ### ⏳ Phase 7: Health Tracker
 - [ ] Monthly habit grid
@@ -164,9 +192,10 @@ src/
 ## Design Notes
 
 - **Dark mode only.** No light mode toggle. `html` has `class="dark"` and `color-scheme: dark`.
-- **Neutral palette.** `zinc` grays to match Clerk's dark theme. No blue-tinted `slate`.
-- **Accent:** `indigo-500` for CTAs and highlights.
+- **Neutral palette.** `zinc` grays to match Clerk's dark theme.
+- **Accent:** `indigo-500` for CTAs. Urgency colors: red → purple → orange → amber → sky → zinc.
 - **Layout:** Bento-box grid. Cards with rounded corners, subtle borders, soft shadows.
+- **Code organization:** Components, tRPC routers, and DB schemas all split by feature/domain.
 
 ---
 
