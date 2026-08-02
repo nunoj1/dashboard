@@ -22,7 +22,7 @@
 		subtasks: Subtask[];
 	}
 
-	let { todos, groupBy, sortByUrgency, ontoggle, onconfirmDone, onsubtaskToggle, onsubtaskDelete } = $props<{
+	let { todos, groupBy, sortByUrgency, ontoggle, onconfirmDone, onsubtaskToggle, onsubtaskDelete, alwaysExpanded = false } = $props<{
 		todos: Todo[];
 		groupBy?: 'category' | 'location' | null;
 		sortByUrgency?: boolean;
@@ -30,6 +30,7 @@
 		onconfirmDone: (id: number) => void;
 		onsubtaskToggle: (id: number) => void;
 		onsubtaskDelete: (id: number) => void;
+		alwaysExpanded?: boolean;
 	}>();
 
 	const urgencyOrder: Record<Urgency, number> = {
@@ -82,7 +83,7 @@
 			</h3>
 			<div class="space-y-2">
 				{#each items as todo (todo.id)}
-					<TodoItem {todo} {ontoggle} {onconfirmDone} {onsubtaskToggle} {onsubtaskDelete} />
+					<TodoItem {todo} {ontoggle} {onconfirmDone} {onsubtaskToggle} {onsubtaskDelete} {alwaysExpanded} />
 				{/each}
 			</div>
 		</div>
@@ -90,7 +91,7 @@
 {:else if todos.length > 0}
 	<div class="space-y-2">
 		{#each displayItems as todo (todo.id)}
-			<TodoItem {todo} {ontoggle} {onconfirmDone} {onsubtaskToggle} {onsubtaskDelete} />
+			<TodoItem {todo} {ontoggle} {onconfirmDone} {onsubtaskToggle} {onsubtaskDelete} {alwaysExpanded} />
 		{/each}
 	</div>
 {:else}

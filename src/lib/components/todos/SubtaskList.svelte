@@ -7,10 +7,11 @@
 		done: boolean | null;
 	}
 
-	let { subtasks, ontoggle, ondelete } = $props<{
+	let { subtasks, ontoggle, ondelete, disabled = false } = $props<{
 		subtasks: Subtask[];
 		ontoggle: (id: number) => void;
 		ondelete: (id: number) => void;
+		disabled?: boolean;
 	}>();
 
 	const completedCount = $derived(subtasks.filter((s: Subtask) => s.done).length);
@@ -29,7 +30,7 @@
 
 	{#each subtasks as st (st.id)}
 		<div class="flex items-center gap-2 group/sub">
-			<Checkbox checked={!!st.done} onchange={() => ontoggle(st.id)} />
+			<Checkbox checked={!!st.done} onchange={() => ontoggle(st.id)} {disabled} />
 			<span class="text-sm {st.done ? 'text-zinc-600 line-through' : 'text-zinc-300'}">{st.title}</span>
 			<button
 				onclick={() => ondelete(st.id)}

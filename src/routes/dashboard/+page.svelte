@@ -35,6 +35,11 @@
 	let filter = $state<'active' | 'done'>('active');
 	let activeGroupBy = $state<'none' | 'category' | 'location'>('category');
 	let confirmingTodoId = $state<number | null>(null);
+	const confirmingUnfinishedSubtasks = $derived(
+		confirmingTodoId !== null
+			? activeTodos.find(t => t.id === confirmingTodoId)?.subtasks.filter(s => !s.done) ?? []
+			: []
+	);	
 	let searchQuery = $state('');
 	let historyPage = $state(1);
 	let historyLimit = $state(10);
@@ -178,6 +183,7 @@
 					todos={filter === 'active' ? activeTodos : historyTodos}
 					groupBy={filter === 'active' ? (activeGroupBy === 'none' ? null : activeGroupBy) : null}
 					sortByUrgency={filter === 'active'}
+					alwaysExpanded={filter === 'active'}
 					ontoggle={toggle}
 					onconfirmDone={confirmDone}
 					onsubtaskToggle={subtaskToggle}
@@ -218,4 +224,18 @@
 	message="This task will be moved to your history. You can view it anytime under the History tab."
 	onconfirm={handleConfirmDone}
 	oncancel={() => confirmingTodoId = null}
-/>
+>
+	{#if confirmingUnfinishedSubtasks.length > 0}
+		<div>
+			<p class="text-sm text-amber-400 mb-2 font-medium">The following subtasks are still unfinished:</p>
+			<ul class="text-sm text-zinc-300 space-y-1">
+				{#each confirmingUnfinishedSubtasks as sub}
+					<li class="flex items-center gap-2">
+						<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+						{sub.title}
+					</li>
+				{/each}
+			</ul>
+		</div>
+	{/if}
+</Modal>
