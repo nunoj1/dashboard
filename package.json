@@ -43,6 +43,7 @@
 		"vite": "^8.0.16"
 	},
 	"dependencies": {
+		"@clerk/themes": "^2.4.57",
 		"@libsql/client": "^0.17.4",
 		"@lucide/svelte": "^1.28.0",
 		"@sveltejs/adapter-node": "^5.5.7",
