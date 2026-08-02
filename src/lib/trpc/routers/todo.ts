@@ -5,7 +5,8 @@ import { todos, todoSubtasks } from '$lib/db/schema/index';
 import { t } from '../init';
 
 export const todoRouter = t.router({
-	getActive: t.procedure.query(async () => {
+	getActive: t.procedure.query(async ({ ctx }) => {
+		if (!ctx.user) return [];
 		const allTodos = await db.select().from(todos).where(eq(todos.done, false)).orderBy(todos.createdAt).all();
 		const allSubtasks = await db.select().from(todoSubtasks).all();
 		return allTodos.map(t => ({
@@ -20,7 +21,8 @@ export const todoRouter = t.router({
 			limit: z.number().min(1).max(50).default(10),
 			search: z.string().optional()
 		}))
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
+			if (!ctx.user) return { items: [], total: 0, page: 1, limit: input.limit };
 			const offset = (input.page - 1) * input.limit;
 			const conditions = [eq(todos.done, true)];
 
@@ -35,7 +37,7 @@ export const todoRouter = t.router({
 				.orderBy(sql`${todos.completedAt} DESC`)
 				.all();
 
-			const countResult = await db.select({ count: sql<number>`count(*)` })
+			const countResult = await db.select({ count: sql`count(*)` })
 				.from(todos)
 				.where(and(...conditions))
 				.get();
@@ -63,9 +65,10 @@ export const todoRouter = t.router({
 			location: z.string().optional(),
 			subtaskTitles: z.array(z.string().min(1)).default([])
 		}))
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
+			if (!ctx.user) throw new Error('Unauthorized');
 			const [todo] = await db.insert(todos).values({
-				userId: 'temp',
+				userId: ctx.user.id,
 				title: input.title,
 				description: input.description,
 				priority: input.priority,

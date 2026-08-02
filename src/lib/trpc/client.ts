@@ -2,7 +2,7 @@ import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import superjson from 'superjson';
 import type { Router } from './router';
 
-let browserClient: ReturnType<typeof createTRPCClient<Router>>;
+let browserClient: ReturnType<typeof createTRPCClient<Router>> | undefined;
 
 export function trpc() {
 	const isBrowser = typeof window !== 'undefined';
