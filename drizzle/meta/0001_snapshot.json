@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "1de9a0e2-79c5-442c-a4a5-7bebc0811de8",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "7cf78f22-cd7b-4275-8965-d62c86ed63e1",
+  "prevId": "1de9a0e2-79c5-442c-a4a5-7bebc0811de8",
   "tables": {
     "users": {
       "name": "users",
@@ -51,6 +51,44 @@
     },
     "todo_categories": {
       "name": "todo_categories",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "todo_locations": {
+      "name": "todo_locations",
       "columns": {
         "id": {
           "name": "id",

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CategoryInput from './CategoryInput.svelte';
+	import LocationInput from './LocationInput.svelte';
 	import { trpc } from '$lib/trpc/client';
 	import { onMount } from 'svelte';
 
@@ -26,10 +27,13 @@
 	let advanced = $state(false);
 	let subtaskInputs = $state<string[]>([]);
 	let allCategories = $state<string[]>([]);
+	let allLocations = $state<string[]>([]);
 
 	onMount(async () => {
 		const cats = await trpc().category.getAll.query();
 		allCategories = cats.map(c => c.name);
+		const locs = await trpc().location.getAll.query();
+		allLocations = locs.map(l => l.name);
 	});
 
 	function addSubtaskInput() {
@@ -59,13 +63,19 @@
 			allCategories = [...allCategories, cat];
 		}
 
+		const loc = location.trim() || undefined;
+		if (loc && !allLocations.includes(loc)) {
+			await trpc().location.create.mutate({ name: loc });
+			allLocations = [...allLocations, loc];
+		}
+
 		onsubmit({
 			title,
 			description: description || undefined,
 			priority: mode === 'priority' ? priority : 'medium',
 			dueDate: combinedDate,
 			category: cat,
-			location: location.trim() || undefined,
+			location: loc,
 			subtaskTitles: subtaskInputs.filter(s => s.trim())
 		});
 
@@ -119,12 +129,7 @@
 				</div>
 				<div>
 					<p class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Location</p>
-					<input
-						type="text"
-						bind:value={location}
-						placeholder="Where?"
-						class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 text-sm"
-					/>
+					<LocationInput bind:value={location} locations={allLocations} />
 				</div>
 			</div>
 

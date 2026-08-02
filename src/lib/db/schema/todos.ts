@@ -28,3 +28,10 @@ export const todoSubtasks = sqliteTable('todo_subtasks', {
 	done: integer('done', { mode: 'boolean' }).default(false),
 	createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date())
 });
+
+export const todoLocations = sqliteTable('todo_locations', {
+	id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+	userId: text('user_id').notNull(),
+	name: text('name').notNull(),
+	createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date())
+});
