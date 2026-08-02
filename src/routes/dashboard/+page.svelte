@@ -1,5 +1,6 @@
 <script lang="ts">
 	import DashboardHeader from '$lib/components/layout/DashboardHeader.svelte';
+	import StockWidget from '$lib/components/stocks/StockWidget.svelte';
 	import Card from '$lib/components/ui/Card.svelte';
 	import TodoForm from '$lib/components/todos/TodoForm.svelte';
 	import TodoList from '$lib/components/todos/TodoList.svelte';
@@ -37,9 +38,9 @@
 	let confirmingTodoId = $state<number | null>(null);
 	const confirmingUnfinishedSubtasks = $derived(
 		confirmingTodoId !== null
-			? activeTodos.find(t => t.id === confirmingTodoId)?.subtasks.filter(s => !s.done) ?? []
+			? (activeTodos.find((t) => t.id === confirmingTodoId)?.subtasks.filter((s) => !s.done) ?? [])
 			: []
-	);	
+	);
 	let searchQuery = $state('');
 	let historyPage = $state(1);
 	let historyLimit = $state(10);
@@ -93,16 +94,20 @@
 	async function handleConfirmDone() {
 		if (confirmingTodoId === null) return;
 		const result = await trpc().todo.toggle.mutate({ id: confirmingTodoId });
-		activeTodos = activeTodos.filter(t => t.id !== confirmingTodoId);
+		activeTodos = activeTodos.filter((t) => t.id !== confirmingTodoId);
 		confirmingTodoId = null;
 	}
 
 	async function toggle(id: number) {
 		const result = await trpc().todo.toggle.mutate({ id });
 		if (filter === 'active') {
-			activeTodos = activeTodos.map(t => t.id === id ? { ...t, done: result.done, completedAt: result.completedAt } : t);
+			activeTodos = activeTodos.map((t) =>
+				t.id === id ? { ...t, done: result.done, completedAt: result.completedAt } : t
+			);
 		} else {
-			historyTodos = historyTodos.map(t => t.id === id ? { ...t, done: result.done, completedAt: result.completedAt } : t);
+			historyTodos = historyTodos.map((t) =>
+				t.id === id ? { ...t, done: result.done, completedAt: result.completedAt } : t
+			);
 		}
 	}
 
@@ -110,7 +115,7 @@
 		await trpc().subtask.toggle.mutate({ id });
 		const update = (t: Todo) => ({
 			...t,
-			subtasks: t.subtasks.map(s => s.id === id ? { ...s, done: !s.done } : s)
+			subtasks: t.subtasks.map((s) => (s.id === id ? { ...s, done: !s.done } : s))
 		});
 		activeTodos = activeTodos.map(update);
 		historyTodos = historyTodos.map(update);
@@ -120,7 +125,7 @@
 		await trpc().subtask.delete.mutate({ id });
 		const update = (t: Todo) => ({
 			...t,
-			subtasks: t.subtasks.filter(s => s.id !== id)
+			subtasks: t.subtasks.filter((s) => s.id !== id)
 		});
 		activeTodos = activeTodos.map(update);
 		historyTodos = historyTodos.map(update);
@@ -133,87 +138,116 @@
 	<DashboardHeader />
 
 	<main class="p-6">
-		<div class="max-w-2xl mx-auto space-y-6">
-			<Card title="To-Do List">
-				<TodoForm onsubmit={addTodo} />
+		<div class="mx-auto grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-3">
+			<!-- Todo List: spans 2 columns -->
+			<div class="lg:col-span-2">
+				<Card title="To-Do List">
+					<TodoForm onsubmit={addTodo} />
 
-				<div class="border-t border-zinc-800/50 mt-6 mb-4"></div>
+					<div class="mt-6 mb-4 border-t border-zinc-800/50"></div>
 
-				<div class="flex items-center justify-between mb-4">
-					<div class="flex gap-1 bg-zinc-950/50 rounded-lg p-1 border border-zinc-800/50">
-						<button
-							onclick={() => { filter = 'active'; }}
-							class="text-sm font-medium py-1.5 px-4 rounded-md transition {filter === 'active' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'}"
-						>
-							Active
-						</button>
-						<button
-							onclick={() => { filter = 'done'; historyPage = 1; }}
-							class="text-sm font-medium py-1.5 px-4 rounded-md transition {filter === 'done' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'}"
-						>
-							History
-						</button>
-					</div>
-				</div>
-
-				{#if filter === 'active'}
-					<div class="flex gap-1 mb-4">
-						{#each [['none', 'None'], ['category', 'Category'], ['location', 'Location']] as [val, label]}
+					<div class="mb-4 flex items-center justify-between">
+						<div class="flex gap-1 rounded-lg border border-zinc-800/50 bg-zinc-950/50 p-1">
 							<button
-								onclick={() => activeGroupBy = val as 'none' | 'category' | 'location'}
-								class="text-xs font-medium px-3 py-1 rounded-md transition border {activeGroupBy === val ? 'bg-zinc-800 text-zinc-100 border-zinc-700' : 'text-zinc-500 border-transparent hover:text-zinc-300 hover:border-zinc-800'}"
+								onclick={() => {
+									filter = 'active';
+								}}
+								class="rounded-md px-4 py-1.5 text-sm font-medium transition {filter === 'active'
+									? 'bg-zinc-800 text-zinc-100'
+									: 'text-zinc-500 hover:text-zinc-300'}"
 							>
-								{label}
-							</button>
-						{/each}
-					</div>
-				{:else}
-					<div class="flex gap-2 mb-4">
-						<input
-							type="text"
-							bind:value={searchQuery}
-							oninput={() => { historyPage = 1; loadHistory(); }}
-							placeholder="Search history..."
-							class="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 text-sm"
-						/>
-					</div>
-				{/if}
-
-				<TodoList
-					todos={filter === 'active' ? activeTodos : historyTodos}
-					groupBy={filter === 'active' ? (activeGroupBy === 'none' ? null : activeGroupBy) : null}
-					sortByUrgency={filter === 'active'}
-					alwaysExpanded={filter === 'active'}
-					ontoggle={toggle}
-					onconfirmDone={confirmDone}
-					onsubtaskToggle={subtaskToggle}
-					onsubtaskDelete={subtaskDelete}
-				/>
-
-				{#if filter === 'done' && totalPages > 1}
-					<div class="flex items-center justify-between mt-6 pt-4 border-t border-zinc-800/50">
-						<span class="text-xs text-zinc-500">
-							Page {historyPage} of {totalPages} ({historyTotal} total)
-						</span>
-						<div class="flex gap-2">
-							<button
-								onclick={() => { historyPage--; loadHistory(); }}
-								disabled={historyPage <= 1}
-								class="px-3 py-1.5 text-sm rounded-lg border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-600 transition disabled:opacity-30 disabled:cursor-not-allowed"
-							>
-								Previous
+								Active
 							</button>
 							<button
-								onclick={() => { historyPage++; loadHistory(); }}
-								disabled={historyPage >= totalPages}
-								class="px-3 py-1.5 text-sm rounded-lg border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-600 transition disabled:opacity-30 disabled:cursor-not-allowed"
+								onclick={() => {
+									filter = 'done';
+									historyPage = 1;
+								}}
+								class="rounded-md px-4 py-1.5 text-sm font-medium transition {filter === 'done'
+									? 'bg-zinc-800 text-zinc-100'
+									: 'text-zinc-500 hover:text-zinc-300'}"
 							>
-								Next
+								History
 							</button>
 						</div>
 					</div>
-				{/if}
-			</Card>
+
+					{#if filter === 'active'}
+						<div class="mb-4 flex gap-1">
+							{#each [['none', 'None'], ['category', 'Category'], ['location', 'Location']] as [val, label]}
+								<button
+									onclick={() => (activeGroupBy = val as 'none' | 'category' | 'location')}
+									class="rounded-md border px-3 py-1 text-xs font-medium transition {activeGroupBy ===
+									val
+										? 'border-zinc-700 bg-zinc-800 text-zinc-100'
+										: 'border-transparent text-zinc-500 hover:border-zinc-800 hover:text-zinc-300'}"
+								>
+									{label}
+								</button>
+							{/each}
+						</div>
+					{:else}
+						<div class="mb-4 flex gap-2">
+							<input
+								type="text"
+								bind:value={searchQuery}
+								oninput={() => {
+									historyPage = 1;
+									loadHistory();
+								}}
+								placeholder="Search history..."
+								class="flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-indigo-500 focus:outline-none"
+							/>
+						</div>
+					{/if}
+
+					<TodoList
+						todos={filter === 'active' ? activeTodos : historyTodos}
+						groupBy={filter === 'active' ? (activeGroupBy === 'none' ? null : activeGroupBy) : null}
+						sortByUrgency={filter === 'active'}
+						alwaysExpanded={filter === 'active'}
+						ontoggle={toggle}
+						onconfirmDone={confirmDone}
+						onsubtaskToggle={subtaskToggle}
+						onsubtaskDelete={subtaskDelete}
+					/>
+
+					{#if filter === 'done' && totalPages > 1}
+						<div class="mt-6 flex items-center justify-between border-t border-zinc-800/50 pt-4">
+							<span class="text-xs text-zinc-500">
+								Page {historyPage} of {totalPages} ({historyTotal} total)
+							</span>
+							<div class="flex gap-2">
+								<button
+									onclick={() => {
+										historyPage--;
+										loadHistory();
+									}}
+									disabled={historyPage <= 1}
+									class="rounded-lg border border-zinc-800 px-3 py-1.5 text-sm text-zinc-400 transition hover:border-zinc-600 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-30"
+								>
+									Previous
+								</button>
+								<button
+									onclick={() => {
+										historyPage++;
+										loadHistory();
+									}}
+									disabled={historyPage >= totalPages}
+									class="rounded-lg border border-zinc-800 px-3 py-1.5 text-sm text-zinc-400 transition hover:border-zinc-600 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-30"
+								>
+									Next
+								</button>
+							</div>
+						</div>
+					{/if}
+				</Card>
+			</div>
+			<div>
+				<Card title="Stocks">
+					<StockWidget />
+				</Card>
+			</div>
 		</div>
 	</main>
 </div>
@@ -223,15 +257,17 @@
 	title="Mark as done?"
 	message="This task will be moved to your history. You can view it anytime under the History tab."
 	onconfirm={handleConfirmDone}
-	oncancel={() => confirmingTodoId = null}
+	oncancel={() => (confirmingTodoId = null)}
 >
 	{#if confirmingUnfinishedSubtasks.length > 0}
 		<div>
-			<p class="text-sm text-amber-400 mb-2 font-medium">The following subtasks are still unfinished:</p>
-			<ul class="text-sm text-zinc-300 space-y-1">
+			<p class="mb-2 text-sm font-medium text-amber-400">
+				The following subtasks are still unfinished:
+			</p>
+			<ul class="space-y-1 text-sm text-zinc-300">
 				{#each confirmingUnfinishedSubtasks as sub}
 					<li class="flex items-center gap-2">
-						<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+						<span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
 						{sub.title}
 					</li>
 				{/each}

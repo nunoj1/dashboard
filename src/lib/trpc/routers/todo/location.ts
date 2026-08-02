@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { db } from '$lib/db';
 import { todoLocations } from '$lib/db/schema/index';
-import { t } from '../init';
+import { t } from '../../init';
 
 export const locationRouter = t.router({
 	getAll: t.procedure.query(async ({ ctx }) => {

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { db } from '$lib/db';
 import { todoSubtasks } from '$lib/db/schema/index';
-import { t } from '../init';
+import { t } from '../../init';
 
 export const subtaskRouter = t.router({
 	toggle: t.procedure

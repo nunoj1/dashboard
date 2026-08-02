@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { db } from '$lib/db';
 import { todoCategories } from '$lib/db/schema/index';
-import { t } from '../init';
+import { t } from '../../init';
 
 export const categoryRouter = t.router({
 	getAll: t.procedure.query(async ({ ctx }) => {
