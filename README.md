@@ -56,8 +56,11 @@ bash
 pnpm build
 node build
 Or use Docker / systemd on your VM.
-Architecture
-plain
+```
+
+---
+## Architecture
+```
 src/
 ├── lib/
 │   ├── components/        # Reusable UI components
