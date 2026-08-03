@@ -22,6 +22,42 @@
 		targetStatus: TargetStatus;
 	}
 
+	function getWeekCount(year: number, month: number): number {
+		const firstOfMonth = new Date(year, month - 1, 1);
+		const lastOfMonth = new Date(year, month, 0);
+		const firstDayOfWeek = firstOfMonth.getDay();
+		const daysFromMonday = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+		const firstMonday = new Date(year, month - 1, 1 - daysFromMonday);
+		const lastDayOfWeek = lastOfMonth.getDay();
+		const daysToSunday = lastDayOfWeek === 0 ? 0 : 7 - lastDayOfWeek;
+		const lastSunday = new Date(year, month - 1, lastOfMonth.getDate() + daysToSunday);
+		const diffTime = lastSunday.getTime() - firstMonday.getTime();
+		const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+		return Math.ceil((diffDays + 1) / 7);
+	}
+
+	function getCurrentWeek(year: number, month: number): number {
+		const today = new Date();
+		if (today.getFullYear() !== year || today.getMonth() + 1 !== month) return 1;
+
+		const firstOfMonth = new Date(year, month - 1, 1);
+		const firstDayOfWeek = firstOfMonth.getDay();
+		const daysFromMonday = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+		const firstMonday = new Date(year, month - 1, 1 - daysFromMonday);
+
+		const todayDayOfWeek = today.getDay();
+		const todayDaysFromMonday = todayDayOfWeek === 0 ? 6 : todayDayOfWeek - 1;
+		const todayMonday = new Date(
+			today.getFullYear(),
+			today.getMonth(),
+			today.getDate() - todayDaysFromMonday
+		);
+
+		const diffTime = todayMonday.getTime() - firstMonday.getTime();
+		const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+		return Math.floor(diffDays / 7) + 1;
+	}
+
 	let habits = $state<Habit[]>([]);
 	let currentMonth = $state(
 		`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
@@ -60,6 +96,9 @@
 		isMobile = mql.matches;
 		if (isMobile) viewMode = 'weekly';
 
+		const [year, month] = currentMonth.split('-').map(Number);
+		currentWeek = getCurrentWeek(year, month);
+
 		const handler = (e: MediaQueryListEvent) => {
 			isMobile = e.matches;
 			if (e.matches) viewMode = 'weekly';
@@ -85,14 +124,16 @@
 		const [year, month] = currentMonth.split('-').map(Number);
 		const date = new Date(year, month - 2, 1);
 		currentMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-		currentWeek = 1;
+		const newWeekCount = getWeekCount(date.getFullYear(), date.getMonth() + 1);
+		currentWeek = Math.min(currentWeek, newWeekCount);
 	}
 
 	function nextMonth() {
 		const [year, month] = currentMonth.split('-').map(Number);
 		const date = new Date(year, month, 1);
 		currentMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-		currentWeek = 1;
+		const newWeekCount = getWeekCount(date.getFullYear(), date.getMonth() + 1);
+		currentWeek = Math.min(currentWeek, newWeekCount);
 	}
 
 	function prevWeek() {
@@ -100,29 +141,30 @@
 			currentWeek--;
 		} else {
 			const [year, month] = currentMonth.split('-').map(Number);
-			const prev = new Date(year, month - 2, 1);
-			currentMonth = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`;
-			const daysInPrev = new Date(prev.getFullYear(), prev.getMonth() + 1, 0).getDate();
-			currentWeek = Math.ceil(daysInPrev / 7);
+			const prevMonthDate = new Date(year, month - 2, 1);
+			currentMonth = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
+			currentWeek = getWeekCount(prevMonthDate.getFullYear(), prevMonthDate.getMonth() + 1);
 		}
 	}
 
 	function nextWeek() {
 		const [year, month] = currentMonth.split('-').map(Number);
-		const daysInMonth = new Date(year, month, 0).getDate();
-		const totalWeeks = Math.ceil(daysInMonth / 7);
+		const totalWeeks = getWeekCount(year, month);
 		if (currentWeek < totalWeeks) {
 			currentWeek++;
 		} else {
-			const next = new Date(year, month, 1);
-			currentMonth = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`;
+			const nextMonthDate = new Date(year, month, 1);
+			currentMonth = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}`;
 			currentWeek = 1;
 		}
 	}
 
 	function setViewMode(mode: 'monthly' | 'weekly') {
 		viewMode = mode;
-		currentWeek = 1;
+		if (mode === 'weekly') {
+			const [year, month] = currentMonth.split('-').map(Number);
+			currentWeek = getCurrentWeek(year, month);
+		}
 	}
 
 	async function addHabit(e: Event) {
@@ -180,12 +222,11 @@
 
 	let weekCount = $derived((() => {
 		const [year, month] = currentMonth.split('-').map(Number);
-		const days = new Date(year, month, 0).getDate();
-		return Math.ceil(days / 7);
+		return getWeekCount(year, month);
 	})());
 </script>
 
-<div class="space-y-4">
+<div class="space-y-3">
 	<div class="flex flex-wrap items-center justify-between gap-2">
 		<div class="flex items-center gap-2">
 			<button
@@ -273,51 +314,98 @@
 	{/if}
 
 	<form onsubmit={addHabit} class="flex flex-col gap-2 border-t border-zinc-800/50 pt-4">
-		<div class="flex items-center gap-2">
-			<div class="flex shrink-0 gap-1">
-				{#each colorOptions as c (c.value)}
-					<button
-						type="button"
-						onclick={() => (newColor = c.value)}
-						class="h-6 w-6 rounded-full border-2 transition {newColor === c.value
-							? 'border-white ' + c.class
-							: 'border-transparent ' + c.class + ' opacity-60 hover:opacity-100'}"
-						aria-label="Select {c.value}"
-						title={c.value}
-					></button>
-				{/each}
-			</div>
+		<!-- Mobile layout -->
+		<div class="flex flex-col gap-2 sm:hidden">
 			<input
 				type="text"
 				bind:value={newName}
 				placeholder="New habit (e.g. Exercise, Read, Meditate)"
-				class="min-w-0 flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-indigo-500 focus:outline-none"
+				class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-indigo-500 focus:outline-none"
 			/>
+			<div class="flex gap-2">
+				<select
+					bind:value={newColor}
+					class="w-auto rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
+				>
+					{#each colorOptions as c (c.value)}
+						<option value={c.value}>{c.value}</option>
+					{/each}
+				</select>
+				<select
+					bind:value={newTargetType}
+					class="flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
+				>
+					{#each targetTypes as tt (tt.value)}
+						<option value={tt.value}>{tt.label}</option>
+					{/each}
+				</select>
+				{#if showCountInput}
+					<div class="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2">
+						<input
+							type="number"
+							bind:value={newTargetCount}
+							min="1"
+							class="w-12 bg-transparent text-right text-sm text-zinc-100 focus:outline-none"
+						/>
+						<span class="text-xs text-zinc-500">
+							{newTargetType === 'weekly' ? '× / week' : '× / month'}
+						</span>
+					</div>
+				{/if}
+			</div>
 		</div>
 
-		<div class="flex flex-col gap-2 sm:flex-row">
-			<select
-				bind:value={newTargetType}
-				class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none sm:w-auto"
-			>
-				{#each targetTypes as tt (tt.value)}
-					<option value={tt.value}>{tt.label}</option>
-				{/each}
-			</select>
-
-			{#if showCountInput}
-				<div class="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2">
-					<input
-						type="number"
-						bind:value={newTargetCount}
-						min="1"
-						class="w-12 bg-transparent text-right text-sm text-zinc-100 focus:outline-none"
-					/>
-					<span class="text-xs text-zinc-500">
-						{newTargetType === 'weekly' ? '× / week' : '× / month'}
-					</span>
+		<!-- Desktop layout -->
+		<div class="hidden sm:flex flex-col gap-2">
+			<div class="flex items-center gap-2">
+				<input
+					type="text"
+					bind:value={newName}
+					placeholder="New habit (e.g. Exercise, Read, Meditate)"
+					class="min-w-0 flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-indigo-500 focus:outline-none"
+				/>
+				<div class="flex shrink-0 gap-1">
+					{#each colorOptions as c (c.value)}
+						<button
+							type="button"
+							onclick={() => (newColor = c.value)}
+							class="h-6 w-6 rounded-full border-2 transition {newColor === c.value
+								? 'border-white ' + c.class
+								: 'border-transparent ' + c.class + ' opacity-60 hover:opacity-100'}"
+							aria-label="Select {c.value}"
+							title={c.value}
+						></button>
+					{/each}
 				</div>
-			{/if}
+			</div>
+
+			<div class="h-px bg-zinc-800/50"></div>
+
+			<div class="flex items-center gap-2">
+				<span class="shrink-0 text-xs text-zinc-500">Target</span>
+				<select
+					bind:value={newTargetType}
+					class="w-auto rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
+				>
+					{#each targetTypes as tt (tt.value)}
+						<option value={tt.value}>{tt.label}</option>
+					{/each}
+				</select>
+
+				{#if showCountInput}
+					<div class="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2">
+						<input
+							type="number"
+							bind:value={newTargetCount}
+							min="1"
+							class="w-12 bg-transparent text-right text-sm text-zinc-100 focus:outline-none"
+						/>
+						<span class="text-xs text-zinc-500">
+							{newTargetType === 'weekly' ? '× / week' : '× / month'}
+						</span>
+					</div>
+				{/if}
+			</div>
 		</div>
 
 		<button

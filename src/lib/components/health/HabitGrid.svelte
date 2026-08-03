@@ -17,6 +17,14 @@
 		completed: boolean | null;
 	}
 
+	interface VisibleDay {
+		dateStr: string;
+		day: number;
+		label: string;
+		isToday: boolean;
+		isCurrentMonth: boolean;
+	}
+
 	let { habits, month, week, viewMode, onUpdate, onDelete } = $props<{
 		habits: Habit[];
 		month: string;
@@ -45,72 +53,94 @@
 		violet: 'bg-violet-500 border-violet-400 hover:bg-violet-400'
 	};
 
-	let daysInMonth = $derived((() => {
-		const [year, monthNum] = month.split('-').map(Number);
-		return new Date(year, monthNum, 0).getDate();
-	})());
+	const [year, monthNum] = $derived(month.split('-').map(Number));
 
-	let weekDays = $derived((() => {
-		const [year, monthNum] = month.split('-').map(Number);
-		const startDay = (week - 1) * 7 + 1;
-		const endDay = Math.min(week * 7, daysInMonth);
-		const days = [];
-		for (let i = startDay; i <= endDay; i++) {
-			const date = new Date(year, monthNum - 1, i);
-			const today = new Date();
-			days.push({
-				day: i,
-				label: date.toLocaleDateString('en-US', { weekday: 'narrow' }),
-				isToday:
-					today.getFullYear() === year &&
-					today.getMonth() + 1 === monthNum &&
-					today.getDate() === i
-			});
-		}
-		return days;
-	})());
+	let daysInMonth = $derived(new Date(year, monthNum, 0).getDate());
 
-	let dayLabels = $derived((() => {
-		const [year, monthNum] = month.split('-').map(Number);
-		const days = [];
+	let monthDays = $derived(((): VisibleDay[] => {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const days: VisibleDay[] = [];
 		for (let i = 1; i <= daysInMonth; i++) {
 			const date = new Date(year, monthNum - 1, i);
-			const today = new Date();
+			const dateStr = `${year}-${String(monthNum).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
 			days.push({
+				dateStr,
 				day: i,
 				label: date.toLocaleDateString('en-US', { weekday: 'narrow' }),
-				isToday:
-					today.getFullYear() === year &&
-					today.getMonth() + 1 === monthNum &&
-					today.getDate() === i
+				isToday: date.getTime() === today.getTime(),
+				isCurrentMonth: true
 			});
 		}
 		return days;
 	})());
 
-	let visibleDays = $derived(viewMode === 'weekly' ? weekDays : dayLabels);
+	let weekDays = $derived(((): VisibleDay[] => {
+		const firstOfMonth = new Date(year, monthNum - 1, 1);
+		const firstDayOfWeek = firstOfMonth.getDay();
+		const daysFromMonday = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+		const firstMonday = new Date(year, monthNum - 1, 1 - daysFromMonday);
+		const targetMonday = new Date(firstMonday);
+		targetMonday.setDate(firstMonday.getDate() + (week - 1) * 7);
+
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+
+		const days: VisibleDay[] = [];
+		for (let i = 0; i < 7; i++) {
+			const date = new Date(targetMonday);
+			date.setDate(targetMonday.getDate() + i);
+			const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+			days.push({
+				dateStr,
+				day: date.getDate(),
+				label: date.toLocaleDateString('en-US', { weekday: 'narrow' }),
+				isToday: date.getTime() === today.getTime(),
+				isCurrentMonth: date.getMonth() + 1 === monthNum && date.getFullYear() === year
+			});
+		}
+		return days;
+	})());
+
+	let visibleDays = $derived(viewMode === 'weekly' ? weekDays : monthDays);
 
 	let gridStyle = $derived(
 		viewMode === 'weekly'
-			? `grid-template-columns: 110px repeat(${visibleDays.length}, minmax(32px, 1fr))`
-			: `grid-template-columns: 110px repeat(${visibleDays.length}, minmax(22px, 1fr))`
+			? 'grid-template-columns: 80px repeat(7, 1fr)'
+			: `grid-template-columns: 80px repeat(${visibleDays.length}, minmax(16px, 1fr))`
 	);
 
-	function getEntry(habitId: number, day: number): Entry | undefined {
-		const dateStr = `${month}-${String(day).padStart(2, '0')}`;
+	function getEntry(habitId: number, dateStr: string): Entry | undefined {
 		return entries.find((e) => e.habitId === habitId && e.date === dateStr);
 	}
 
-	async function toggle(habitId: number, day: number) {
-		const dateStr = `${month}-${String(day).padStart(2, '0')}`;
+	async function toggle(habitId: number, dateStr: string) {
 		await trpc().health.toggleEntry.mutate({ habitId, date: dateStr });
-		await loadEntriesForMonth(month);
+		await loadEntries();
 		onUpdate();
 	}
 
-	async function loadEntriesForMonth(m: string) {
+	async function loadEntries() {
 		loading = true;
-		entries = await trpc().health.getEntries.query({ month: m });
+
+		const currentMonth = month;
+		const currentViewMode = viewMode;
+		const currentWeekDays = currentViewMode === 'weekly' ? weekDays : [];
+
+		const monthsToLoad = new Set<string>();
+		monthsToLoad.add(currentMonth);
+
+		for (const d of currentWeekDays) {
+			const dMonth = d.dateStr.slice(0, 7);
+			if (dMonth !== currentMonth) monthsToLoad.add(dMonth);
+		}
+
+		const allEntries: Entry[] = [];
+		for (const m of monthsToLoad) {
+			const monthEntries = await trpc().health.getEntries.query({ month: m });
+			allEntries.push(...monthEntries);
+		}
+		entries = allEntries;
 		loading = false;
 	}
 
@@ -128,7 +158,7 @@
 	}
 
 	$effect(() => {
-		loadEntriesForMonth(month);
+		void loadEntries();
 	});
 </script>
 
@@ -136,26 +166,29 @@
 	<div class="min-w-full">
 		<!-- Header row -->
 		<div class="grid gap-px" style={gridStyle}>
-			<div class="text-[10px] font-medium text-zinc-600"></div>
-			{#each visibleDays as { day, label, isToday } (day)}
+			<div class="text-[9px] font-medium text-zinc-600"></div>
+			{#each visibleDays as d (d.dateStr)}
 				<div class="flex flex-col items-center gap-px">
-					<span class="text-[9px] leading-3 text-zinc-600">{label}</span>
-					<span class="text-[10px] leading-3 {isToday ? 'font-bold text-indigo-400' : 'text-zinc-500'}"
-						>{day}</span
+					<span class="text-[8px] leading-3 text-zinc-600">{d.label}</span>
+					<span
+						class="text-[9px] leading-3 {d.isToday
+							? 'font-bold text-indigo-400'
+							: d.isCurrentMonth
+								? 'text-zinc-500'
+								: 'text-zinc-600'}"
 					>
+						{d.day}
+					</span>
 				</div>
 			{/each}
 		</div>
 
 		<!-- Habit rows -->
 		{#each habits as habit (habit.id)}
-			<div
-				class="group grid gap-px py-px transition hover:bg-zinc-800/30"
-				style={gridStyle}
-			>
+			<div class="group grid gap-px py-px transition hover:bg-zinc-800/30" style={gridStyle}>
 				<div class="flex min-w-0 items-center justify-between overflow-hidden pr-1">
 					<span
-						class="truncate text-[11px] font-medium leading-tight text-zinc-300"
+						class="truncate text-[10px] font-medium leading-tight text-zinc-300"
 						onmouseenter={(e) => showTip(e, habit.name)}
 						onmousemove={moveTip}
 						onmouseleave={hideTip}
@@ -172,14 +205,14 @@
 						✕
 					</button>
 				</div>
-				{#each visibleDays as { day } (day)}
-					{@const entry = getEntry(habit.id, day)}
+				{#each visibleDays as d (d.dateStr)}
+					{@const entry = getEntry(habit.id, d.dateStr)}
 					<button
-						onclick={() => toggle(habit.id, day)}
-						class="min-h-[22px] w-full rounded-sm border transition {entry?.completed
+						onclick={() => toggle(habit.id, d.dateStr)}
+						class="min-h-[20px] w-full rounded-sm border transition {entry?.completed
 							? colorMap[habit.color ?? 'indigo'] || colorMap.indigo
 							: 'border-zinc-800/60 bg-zinc-900/40 hover:border-zinc-700'}"
-						aria-label="{habit.name} on {month}-{day}"
+						aria-label="{habit.name} on {d.dateStr}"
 					></button>
 				{/each}
 			</div>
