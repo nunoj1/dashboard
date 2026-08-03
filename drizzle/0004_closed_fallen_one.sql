@@ -1,0 +1,1 @@
+ALTER TABLE `habits` ADD `target` text DEFAULT 'daily';

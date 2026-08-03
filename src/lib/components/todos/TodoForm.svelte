@@ -93,16 +93,16 @@
 </script>
 
 <form onsubmit={handleSubmit} class="space-y-3">
-	<div class="flex gap-3">
+	<div class="flex flex-col gap-3 sm:flex-row">
 		<input
 			type="text"
 			bind:value={title}
 			placeholder="What needs doing?"
-			class="flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-zinc-100 placeholder-zinc-600 transition focus:border-indigo-500 focus:outline-none"
+			class="flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 transition focus:border-indigo-500 focus:outline-none"
 		/>
 		<button
 			type="submit"
-			class="shrink-0 rounded-lg bg-indigo-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-400"
+			class="w-full rounded-lg bg-indigo-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-400 sm:w-auto sm:shrink-0"
 		>
 			Add
 		</button>

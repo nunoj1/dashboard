@@ -4,8 +4,10 @@ import { db } from '$lib/db';
 import { habits, habitEntries } from '$lib/db/schema/index';
 import { t } from '../init';
 
-function calculateCurrentStreak(entries: { date: string; completed: boolean }[]): number {
-	const completedDates = new Set(entries.filter((e) => e.completed).map((e) => e.date));
+type HabitEntry = { date: string; completed: boolean | null };
+
+function calculateCurrentStreak(entries: HabitEntry[]): number {
+	const completedDates = new Set(entries.filter((e) => e.completed === true).map((e) => e.date));
 	const today = new Date();
 	today.setHours(0, 0, 0, 0);
 	let streak = 0;
@@ -22,9 +24,9 @@ function calculateCurrentStreak(entries: { date: string; completed: boolean }[])
 	return streak;
 }
 
-function calculateLongestStreak(entries: { date: string; completed: boolean }[]): number {
+function calculateLongestStreak(entries: HabitEntry[]): number {
 	const dates = entries
-		.filter((e) => e.completed)
+		.filter((e) => e.completed === true)
 		.map((e) => new Date(e.date))
 		.sort((a, b) => a.getTime() - b.getTime());
 	if (dates.length === 0) return 0;
@@ -43,26 +45,64 @@ function calculateLongestStreak(entries: { date: string; completed: boolean }[])
 	return longest;
 }
 
+function countLastNDays(entries: HabitEntry[], n: number) {
+	const now = new Date();
+	let count = 0;
+	for (let i = 0; i < n; i++) {
+		const d = new Date(now);
+		d.setDate(d.getDate() - i);
+		const str = d.toISOString().split('T')[0];
+		if (entries.some((e) => e.date === str)) count++;
+	}
+	return count;
+}
+
+function getTargetStatus(entries: HabitEntry[], targetType: string | null, targetCount: number | null) {
+	const completed = entries.filter((e) => e.completed === true);
+	const now = new Date();
+
+	switch (targetType) {
+		case 'daily':
+			return { expected: 7, actual: countLastNDays(completed, 7), label: 'last 7 days' };
+		case 'weekly':
+			return {
+				expected: targetCount ?? 1,
+				actual: countLastNDays(completed, 7),
+				label: 'last 7 days'
+			};
+		case 'monthly': {
+			const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+			const count = completed.filter((e) => e.date.startsWith(monthStr)).length;
+			return { expected: targetCount ?? 1, actual: count, label: 'this month' };
+		}
+		case 'none':
+		default:
+			return { expected: 0, actual: completed.length, label: 'all time' };
+	}
+}
+
 export const healthRouter = t.router({
 	getHabits: t.procedure.query(async ({ ctx }) => {
 		if (!ctx.user) return [];
-		const allHabits = await db
+		const userHabits = await db
 			.select()
 			.from(habits)
 			.where(eq(habits.userId, ctx.user.id))
 			.orderBy(habits.order)
 			.all();
-		const allEntries = await db
-			.select()
-			.from(habitEntries)
-			.all();
-		return allHabits.map((h) => {
-			const habitEntriesList = allEntries.filter((e) => e.habitId === h.id);
+		if (userHabits.length === 0) return [];
+		const habitIds = userHabits.map((h) => h.id);
+		const allEntries = await db.select().from(habitEntries).all();
+		const userEntries = allEntries.filter((e) => habitIds.includes(e.habitId));
+		return userHabits.map((h) => {
+			const habitEntriesList = userEntries.filter((e) => e.habitId === h.id);
+			const status = getTargetStatus(habitEntriesList, h.targetType, h.targetCount);
 			return {
 				...h,
 				currentStreak: calculateCurrentStreak(habitEntriesList),
 				longestStreak: calculateLongestStreak(habitEntriesList),
-				totalCompletions: habitEntriesList.filter((e) => e.completed).length
+				totalCompletions: habitEntriesList.filter((e) => e.completed === true).length,
+				targetStatus: status
 			};
 		});
 	}),
@@ -78,23 +118,21 @@ export const healthRouter = t.router({
 				.all();
 			const habitIds = userHabits.map((h) => h.id);
 			if (habitIds.length === 0) return [];
-			return db
+			const allEntries = await db
 				.select()
 				.from(habitEntries)
-				.where(
-					and(
-						sql`${habitEntries.date} LIKE ${input.month + '%'}`,
-						sql`${habitEntries.habitId} IN ${habitIds}`
-					)
-				)
+				.where(sql`${habitEntries.date} LIKE ${input.month + '%'}`)
 				.all();
+			return allEntries.filter((e) => habitIds.includes(e.habitId));
 		}),
 
 	createHabit: t.procedure
 		.input(
 			z.object({
 				name: z.string().min(1),
-				color: z.enum(['indigo', 'emerald', 'sky', 'amber', 'rose', 'violet']).default('indigo')
+				color: z.enum(['indigo', 'emerald', 'sky', 'amber', 'rose', 'violet']).default('indigo'),
+				targetType: z.enum(['daily', 'weekly', 'monthly', 'none']).default('daily'),
+				targetCount: z.number().min(1).optional()
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
@@ -104,7 +142,11 @@ export const healthRouter = t.router({
 				.values({
 					userId: ctx.user.id,
 					name: input.name,
-					color: input.color
+					color: input.color,
+					targetType: input.targetType,
+					targetCount: input.targetType === 'none' || input.targetType === 'daily' 
+						? null 
+						: input.targetCount
 				})
 				.returning();
 			return habit;
@@ -153,7 +195,7 @@ export const healthRouter = t.router({
 		.input(z.object({ period: z.enum(['7d', '30d', '90d', '1y']).default('30d') }))
 		.query(async ({ ctx }) => {
 			if (!ctx.user) return { habits: [] };
-			const allHabits = await db.select().from(habits).all();
+			const allHabits = await db.select().from(habits).where(eq(habits.userId, ctx.user.id)).all();
 			const allEntries = await db.select().from(habitEntries).all();
 			const habitStats = allHabits.map((h) => {
 				const list = allEntries.filter((e) => e.habitId === h.id);
@@ -161,7 +203,7 @@ export const healthRouter = t.router({
 					...h,
 					currentStreak: calculateCurrentStreak(list),
 					longestStreak: calculateLongestStreak(list),
-					totalCompletions: list.filter((e) => e.completed).length
+					totalCompletions: list.filter((e) => e.completed === true).length
 				};
 			});
 			return { habits: habitStats };
