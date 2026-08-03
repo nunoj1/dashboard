@@ -22,7 +22,16 @@
 		subtasks: Subtask[];
 	}
 
-	let { todos, groupBy, sortByUrgency, ontoggle, onconfirmDone, onsubtaskToggle, onsubtaskDelete, alwaysExpanded = false } = $props<{
+	let {
+		todos,
+		groupBy,
+		sortByUrgency,
+		ontoggle,
+		onconfirmDone,
+		onsubtaskToggle,
+		onsubtaskDelete,
+		alwaysExpanded = false
+	} = $props<{
 		todos: Todo[];
 		groupBy?: 'category' | 'location' | null;
 		sortByUrgency?: boolean;
@@ -59,13 +68,14 @@
 		!groupBy || todos.length === 0
 			? null
 			: (() => {
-					const map = new Map<string, Todo[]>();
+					const groups: Record<string, Todo[]> = {};
 					for (const t of todos) {
-						const key = groupBy === 'location' ? (t.location || 'No location') : (t.category || 'Uncategorized');
-						if (!map.has(key)) map.set(key, []);
-						map.get(key)!.push(t);
+						const key =
+							groupBy === 'location' ? (t.location || 'No location') : (t.category || 'Uncategorized');
+						if (!groups[key]) groups[key] = [];
+						groups[key].push(t);
 					}
-					return Array.from(map.entries())
+					return Object.entries(groups)
 						.sort((a, b) => a[0].localeCompare(b[0]))
 						.map(([key, items]) => [key, sortItems(items)] as [string, Todo[]]);
 				})()
@@ -77,13 +87,20 @@
 {#if grouped && grouped.length > 0}
 	{#each grouped as [group, items] (group)}
 		<div class="mb-5">
-			<h3 class="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 flex items-center gap-2">
-				<span class="w-1.5 h-1.5 rounded-full bg-zinc-600"></span>
+			<h3 class="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+				<span class="h-1.5 w-1.5 rounded-full bg-zinc-600"></span>
 				{group}
 			</h3>
 			<div class="space-y-2">
 				{#each items as todo (todo.id)}
-					<TodoItem {todo} {ontoggle} {onconfirmDone} {onsubtaskToggle} {onsubtaskDelete} {alwaysExpanded} />
+					<TodoItem
+						{todo}
+						{ontoggle}
+						{onconfirmDone}
+						{onsubtaskToggle}
+						{onsubtaskDelete}
+						{alwaysExpanded}
+					/>
 				{/each}
 			</div>
 		</div>
@@ -91,11 +108,18 @@
 {:else if todos.length > 0}
 	<div class="space-y-2">
 		{#each displayItems as todo (todo.id)}
-			<TodoItem {todo} {ontoggle} {onconfirmDone} {onsubtaskToggle} {onsubtaskDelete} {alwaysExpanded} />
+			<TodoItem
+				{todo}
+				{ontoggle}
+				{onconfirmDone}
+				{onsubtaskToggle}
+				{onsubtaskDelete}
+				{alwaysExpanded}
+			/>
 		{/each}
 	</div>
 {:else}
-	<p class="text-zinc-600 text-sm text-center py-8">
+	<p class="py-8 text-center text-sm text-zinc-600">
 		{sortByUrgency ? 'No active tasks. All caught up!' : 'No tasks found.'}
 	</p>
 {/if}

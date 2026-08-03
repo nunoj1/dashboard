@@ -35,7 +35,7 @@
 	/>
 	{#if open && filtered.length > 0 && value}
 		<div class="absolute top-full left-0 right-0 mt-1 bg-zinc-900 border border-zinc-700 rounded-lg overflow-hidden z-20 shadow-xl max-h-40 overflow-y-auto">
-			{#each filtered as loc}
+			{#each filtered as loc (loc)}
 				<button
 					type="button"
 					onclick={() => select(loc)}

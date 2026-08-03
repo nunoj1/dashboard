@@ -31,9 +31,9 @@
 
 	onMount(async () => {
 		const cats = await trpc().category.getAll.query();
-		allCategories = cats.map(c => c.name);
+		allCategories = cats.map((c) => c.name);
 		const locs = await trpc().location.getAll.query();
-		allLocations = locs.map(l => l.name);
+		allLocations = locs.map((l) => l.name);
 	});
 
 	function addSubtaskInput() {
@@ -41,7 +41,7 @@
 	}
 
 	function updateSubtask(index: number, value: string) {
-		subtaskInputs = subtaskInputs.map((s, i) => i === index ? value : s);
+		subtaskInputs = subtaskInputs.map((s, i) => (i === index ? value : s));
 	}
 
 	function removeSubtaskInput(index: number) {
@@ -76,7 +76,7 @@
 			dueDate: combinedDate,
 			category: cat,
 			location: loc,
-			subtaskTitles: subtaskInputs.filter(s => s.trim())
+			subtaskTitles: subtaskInputs.filter((s) => s.trim())
 		});
 
 		title = '';
@@ -98,11 +98,11 @@
 			type="text"
 			bind:value={title}
 			placeholder="What needs doing?"
-			class="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 transition"
+			class="flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-zinc-100 placeholder-zinc-600 transition focus:border-indigo-500 focus:outline-none"
 		/>
 		<button
 			type="submit"
-			class="bg-indigo-500 hover:bg-indigo-400 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition shrink-0"
+			class="shrink-0 rounded-lg bg-indigo-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-400"
 		>
 			Add
 		</button>
@@ -110,44 +110,57 @@
 
 	<button
 		type="button"
-		onclick={() => advanced = !advanced}
-		class="text-xs text-zinc-500 hover:text-zinc-300 transition flex items-center gap-1"
+		onclick={() => (advanced = !advanced)}
+		class="flex items-center gap-1 text-xs text-zinc-500 transition hover:text-zinc-300"
 	>
-		<svg class="w-3 h-3 transition-transform {advanced ? 'rotate-90' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+		<svg
+			class="h-3 w-3 transition-transform {advanced ? 'rotate-90' : ''}"
+			fill="none"
+			stroke="currentColor"
+			viewBox="0 0 24 24"
+		>
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
 		</svg>
 		{advanced ? 'Hide options' : 'Advanced options'}
 	</button>
 
 	{#if advanced}
-		<div class="bg-zinc-950/50 rounded-lg border border-zinc-800/50 p-4 space-y-4">
+		<div class="space-y-4 rounded-lg border border-zinc-800/50 bg-zinc-950/50 p-4">
 			<!-- Category & Location -->
 			<div class="grid grid-cols-2 gap-3">
 				<div>
-					<p class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Category</p>
+					<p class="mb-1.5 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase">
+						Category
+					</p>
 					<CategoryInput bind:value={category} categories={allCategories} />
 				</div>
 				<div>
-					<p class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Location</p>
+					<p class="mb-1.5 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase">
+						Location
+					</p>
 					<LocationInput bind:value={location} locations={allLocations} />
 				</div>
 			</div>
 
 			<!-- Mode toggle -->
 			<div class="border-t border-zinc-800/30 pt-4">
-				<p class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2">Type</p>
-				<div class="flex gap-1 bg-zinc-950 rounded-lg p-1 border border-zinc-800/50">
+				<p class="mb-2 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase">Type</p>
+				<div class="flex gap-1 rounded-lg border border-zinc-800/50 bg-zinc-950 p-1">
 					<button
 						type="button"
-						onclick={() => mode = 'schedule'}
-						class="flex-1 text-xs font-medium py-1.5 rounded-md transition {mode === 'schedule' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'}"
+						onclick={() => (mode = 'schedule')}
+						class="flex-1 rounded-md py-1.5 text-xs font-medium transition {mode === 'schedule'
+							? 'bg-zinc-800 text-zinc-100'
+							: 'text-zinc-500 hover:text-zinc-300'}"
 					>
 						📅 Due date
 					</button>
 					<button
 						type="button"
-						onclick={() => mode = 'priority'}
-						class="flex-1 text-xs font-medium py-1.5 rounded-md transition {mode === 'priority' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'}"
+						onclick={() => (mode = 'priority')}
+						class="flex-1 rounded-md py-1.5 text-xs font-medium transition {mode === 'priority'
+							? 'bg-zinc-800 text-zinc-100'
+							: 'text-zinc-500 hover:text-zinc-300'}"
 					>
 						⚡ Priority only
 					</button>
@@ -156,27 +169,29 @@
 
 			{#if mode === 'schedule'}
 				<div class="border-t border-zinc-800/30 pt-4">
-					<p class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Due</p>
+					<p class="mb-1.5 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase">Due</p>
 					<div class="flex gap-3">
 						<input
 							type="date"
 							bind:value={dueDate}
-							class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 text-sm focus:outline-none focus:border-indigo-500 [color-scheme:dark]"
+							class="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 scheme-dark focus:border-indigo-500 focus:outline-none"
 						/>
 						<input
 							type="time"
 							bind:value={dueTime}
-							class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 text-sm focus:outline-none focus:border-indigo-500 [color-scheme:dark]"
+							class="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 scheme-dark focus:border-indigo-500 focus:outline-none"
 						/>
 					</div>
-					<p class="text-xs text-zinc-600 mt-1.5">Priority auto-set by urgency.</p>
+					<p class="mt-1.5 text-xs text-zinc-600">Priority auto-set by urgency.</p>
 				</div>
 			{:else}
 				<div class="border-t border-zinc-800/30 pt-4">
-					<p class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Priority</p>
+					<p class="mb-1.5 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase">
+						Priority
+					</p>
 					<select
 						bind:value={priority}
-						class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 text-sm focus:outline-none focus:border-indigo-500"
+						class="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
 					>
 						<option value="low">Low</option>
 						<option value="medium">Medium</option>
@@ -186,46 +201,53 @@
 			{/if}
 
 			<div class="border-t border-zinc-800/30 pt-4">
-				<p class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Description</p>
+				<p class="mb-1.5 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase">
+					Description
+				</p>
 				<textarea
 					bind:value={description}
 					placeholder="Add details..."
 					rows="2"
-					class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 transition text-sm resize-none"
+					class="w-full resize-none rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-2 text-sm text-zinc-100 placeholder-zinc-600 transition focus:border-indigo-500 focus:outline-none"
 				></textarea>
 			</div>
 
 			<div class="border-t border-zinc-800/30 pt-4">
-				<div class="flex items-center justify-between mb-2">
-					<p class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Subtasks</p>
+				<div class="mb-2 flex items-center justify-between">
+					<p class="text-[10px] font-semibold tracking-wider text-zinc-500 uppercase">Subtasks</p>
 					<span class="text-[10px] text-zinc-600">Break into smaller steps</span>
 				</div>
 				<div class="space-y-2">
-					{#each subtaskInputs as _, i}
+					{#each subtaskInputs as subtask, i (i)}
 						<div class="flex gap-2">
 							<input
 								type="text"
-								value={subtaskInputs[i]}
+								value={subtask}
 								oninput={(e) => updateSubtask(i, e.currentTarget.value)}
 								placeholder="Step {i + 1}"
-								class="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 transition text-sm"
+								class="flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 transition focus:border-indigo-500 focus:outline-none"
 							/>
 							<button
 								type="button"
 								onclick={() => removeSubtaskInput(i)}
-								class="text-zinc-600 hover:text-red-400 text-sm px-2"
+								class="px-2 text-sm text-zinc-600 hover:text-red-400"
 							>
-								×
+								✕
 							</button>
 						</div>
 					{/each}
 					<button
 						type="button"
 						onclick={addSubtaskInput}
-						class="text-xs text-indigo-400 hover:text-indigo-300 transition flex items-center gap-1 mt-1"
+						class="mt-1 flex items-center gap-1 text-xs text-indigo-400 transition hover:text-indigo-300"
 					>
-						<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+						<svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M12 4v16m8-8H4"
+							/>
 						</svg>
 						Add subtask
 					</button>

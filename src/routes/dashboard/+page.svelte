@@ -1,6 +1,7 @@
 <script lang="ts">
 	import DashboardHeader from '$lib/components/layout/DashboardHeader.svelte';
 	import StockWidget from '$lib/components/stocks/StockWidget.svelte';
+	import HealthWidget from '$lib/components/health/HealthWidget.svelte';
 	import Card from '$lib/components/ui/Card.svelte';
 	import TodoForm from '$lib/components/todos/TodoForm.svelte';
 	import TodoList from '$lib/components/todos/TodoList.svelte';
@@ -93,7 +94,7 @@
 
 	async function handleConfirmDone() {
 		if (confirmingTodoId === null) return;
-		const result = await trpc().todo.toggle.mutate({ id: confirmingTodoId });
+		await trpc().todo.toggle.mutate({ id: confirmingTodoId });
 		activeTodos = activeTodos.filter((t) => t.id !== confirmingTodoId);
 		confirmingTodoId = null;
 	}
@@ -174,7 +175,7 @@
 
 					{#if filter === 'active'}
 						<div class="mb-4 flex gap-1">
-							{#each [['none', 'None'], ['category', 'Category'], ['location', 'Location']] as [val, label]}
+							{#each [['none', 'None'], ['category', 'Category'], ['location', 'Location']] as [val, label] (val)}
 								<button
 									onclick={() => (activeGroupBy = val as 'none' | 'category' | 'location')}
 									class="rounded-md border px-3 py-1 text-xs font-medium transition {activeGroupBy ===
@@ -248,6 +249,11 @@
 					<StockWidget />
 				</Card>
 			</div>
+			<div class="lg:col-span-3">
+				<Card title="Health Tracker">
+					<HealthWidget />
+				</Card>
+			</div>
 		</div>
 	</main>
 </div>
@@ -265,7 +271,7 @@
 				The following subtasks are still unfinished:
 			</p>
 			<ul class="space-y-1 text-sm text-zinc-300">
-				{#each confirmingUnfinishedSubtasks as sub}
+				{#each confirmingUnfinishedSubtasks as sub (sub.id)}
 					<li class="flex items-center gap-2">
 						<span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
 						{sub.title}
