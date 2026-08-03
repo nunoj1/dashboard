@@ -163,16 +163,16 @@
 			{#if mode === 'schedule'}
 				<div class="separator-light pt-4">
 					<p class="label mb-1.5">Due</p>
-					<div class="flex gap-3">
-						<input type="date" bind:value={dueDate} class="input scheme-dark" />
-						<input type="time" bind:value={dueTime} class="input scheme-dark" />
+					<div class="flex flex-col gap-3 sm:flex-row">
+						<input type="date" bind:value={dueDate} class="input w-full scheme-dark" />
+						<input type="time" bind:value={dueTime} class="input w-full scheme-dark" />
 					</div>
 					<p class="mt-1.5 text-xs text-zinc-600">Priority auto-set by urgency.</p>
 				</div>
 			{:else}
 				<div class="separator-light pt-4">
 					<p class="label mb-1.5">Priority</p>
-					<select bind:value={priority} class="input">
+					<select bind:value={priority} class="input w-full">
 						<option value="low">Low</option>
 						<option value="medium">Medium</option>
 						<option value="high">High</option>
