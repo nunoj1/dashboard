@@ -25,9 +25,6 @@ A curated dashboard running on your VM — YouTube subscriptions, news, stocks, 
 - Node.js 20+
 - pnpm
 - A [Clerk](https://clerk.com) account with Google OAuth enabled
-- (Optional) YouTube Data API v3 key
-- (Optional) NewsAPI key
-- (Optional) Stock API access
 
 ---
 
@@ -78,11 +75,13 @@ src/
 │   ├── components/        # Reusable UI components
 │   │   ├── layout/
 │   │   ├── todos/
+│   │   ├── stocks/
 │   │   └── ui/
 │   ├── db/
 │   │   ├── schema/          # Drizzle schemas by domain
 │   │   │   ├── index.ts
 │   │   │   ├── todos.ts
+│   │   │   ├── stocks.ts
 │   │   │   └── users.ts
 │   │   └── index.ts         # DB connection
 │   ├── server/              # Server-only utilities
@@ -92,9 +91,12 @@ src/
 │   │   ├── client.ts
 │   │   ├── router.ts        # Root router
 │   │   └── routers/         # Feature routers
-│   │       ├── todo.ts
-│   │       ├── category.ts
-│   │       └── subtask.ts
+│   │       ├── todo/
+│   │       │   ├── category.ts
+│   │       │   ├── location.ts
+│   │       │   └── subtask.ts
+│   │       ├── stock.ts
+│   │       └── todo.ts
 │   └── utils/
 │       └── date.ts
 ├── routes/
@@ -121,52 +123,55 @@ src/
 ### ✅ Phase 1: tRPC + Data Layer
 - [x] tRPC router with superjson transformer
 - [x] SQLite database connection via Drizzle
-- [x] Schema split by domain (`users.ts`, `todos.ts`)
+- [x] Schema split by domain (`users.ts`, `todos.ts`, `stocks.ts`)
 - [x] API route at `/api/trpc/[...trpc]`
 - [x] Client-side tRPC hook
-- [x] Router split by feature (`todo.ts`, `category.ts`, `subtask.ts`)
+- [x] Router split by feature (`todo/`, `stock.ts`)
 
-### ✅ Phase 6: To-Do List (Expanded)
+### ✅ Phase 2: To-Do List (Expanded)
 - [x] Create / toggle / delete tasks
 - [x] **Subtasks** with progress bar and individual checkboxes
 - [x] **Due dates** with split date/time inputs
 - [x] **Urgency scoring**: Critical → High → Urgent → Soon → Normal → Low
 - [x] **Priority mode** vs **Schedule mode** (mutually exclusive)
 - [x] **Categories** with autofill input (creates new if not exists)
-- [x] **Location** field
+- [x] **Locations** with autofill input (creates new if not exists)
 - [x] **Active grouping** toggle: None / Category / Location
 - [x] **History** tab with server-side pagination
 - [x] **History search** by title
 - [x] **Confirmation modal** before marking done
+- [x] Subtask warning in modal when unfinished subtasks exist
 - [x] Date metadata: Due, Created, Completed
 
-### ⏳ Phase 2: YouTube Feed
+### ✅ Phase 3: Stock Ticker
+- [x] Yahoo Finance API integration (no key required)
+- [x] Live price + change % + sparkline chart
+- [x] Configurable tickers (add/remove)
+- [x] Mini stock widget in bento layout
+
+### ⏳ Phase 4: Health Tracker
+- [ ] Monthly habit grid
+- [ ] Checkboxes per day (exercise, read, meditate, etc.)
+- [ ] Streak counters
+- [ ] Dashboard with stats over time, with filters by time periods
+
+### ⏳ Phase 5: YouTube Feed
 - [ ] YouTube Data API integration
 - [ ] Fetch subscriptions
 - [ ] Cache latest videos in DB
 - [ ] Video card UI
 - [ ] Mark as watched
 
-### ⏳ Phase 3: News Feeds
+### ⏳ Phase 6: News Feeds
 - [ ] NewsAPI integration (local / world / tech)
 - [ ] Article caching
 - [ ] News card UI
 - [ ] Mark as read
 
-### ⏳ Phase 4: Stock Ticker
-- [ ] Stock price API (VWCE, S&P 500, BTC)
-- [ ] Mini stock widget
-- [ ] Configurable tickers
-
-### ⏳ Phase 5: Calendar
+### ⏳ Phase 7: Calendar
 - [ ] Google Calendar API integration
 - [ ] Upcoming events list
 - [ ] Event caching
-
-### ⏳ Phase 7: Health Tracker
-- [ ] Monthly habit grid
-- [ ] Checkboxes per day (exercise, read, meditate, etc.)
-- [ ] Streak counters
 
 ### ⏳ Phase 8: Notifications
 - [ ] In-app notification center
