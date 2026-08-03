@@ -106,7 +106,7 @@
 
 	let gridStyle = $derived(
 		viewMode === 'weekly'
-			? 'grid-template-columns: 80px repeat(7, 1fr)'
+			? 'grid-template-columns: 64px repeat(7, 1fr)'
 			: `grid-template-columns: 80px repeat(${visibleDays.length}, minmax(16px, 1fr))`
 	);
 
@@ -162,7 +162,7 @@
 	});
 </script>
 
-<div class={viewMode === 'monthly' ? 'overflow-x-auto' : ''}>
+<div class="overflow-x-auto">
 	<div class="min-w-full">
 		<!-- Header row -->
 		<div class="grid gap-px" style={gridStyle}>
@@ -186,7 +186,7 @@
 		<!-- Habit rows -->
 		{#each habits as habit (habit.id)}
 			<div class="group grid gap-px py-px transition hover:bg-zinc-800/30" style={gridStyle}>
-				<div class="flex min-w-0 items-center justify-between overflow-hidden pr-1">
+				<div class="flex min-w-0 items-center justify-between overflow-hidden pr-1 cursor-default">
 					<span
 						class="truncate text-[10px] font-medium leading-tight text-zinc-300"
 						onmouseenter={(e) => showTip(e, habit.name)}

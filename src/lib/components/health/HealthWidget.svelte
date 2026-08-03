@@ -63,8 +63,8 @@
 		`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
 	);
 	let currentWeek = $state(1);
-	let viewMode = $state<'monthly' | 'weekly'>('monthly');
-	let isMobile = $state(false);
+	// Default to weekly so server render is safe (no wide grid overflow on mobile)
+	let viewMode = $state<'monthly' | 'weekly'>('weekly');
 
 	let newName = $state('');
 	let newColor = $state<'indigo' | 'emerald' | 'sky' | 'amber' | 'rose' | 'violet'>('indigo');
@@ -93,19 +93,19 @@
 
 	onMount(() => {
 		const mql = window.matchMedia('(max-width: 640px)');
-		isMobile = mql.matches;
-		if (isMobile) viewMode = 'weekly';
 
-		const [year, month] = currentMonth.split('-').map(Number);
-		currentWeek = getCurrentWeek(year, month);
+		function handleChange(e: MediaQueryListEvent | MediaQueryList) {
+			viewMode = e.matches ? 'weekly' : 'monthly';
+			if (e.matches) {
+				const [year, month] = currentMonth.split('-').map(Number);
+				currentWeek = getCurrentWeek(year, month);
+			}
+		}
 
-		const handler = (e: MediaQueryListEvent) => {
-			isMobile = e.matches;
-			if (e.matches) viewMode = 'weekly';
-		};
-		mql.addEventListener('change', handler);
+		handleChange(mql);
+		mql.addEventListener('change', handleChange);
 		loadHabits();
-		return () => mql.removeEventListener('change', handler);
+		return () => mql.removeEventListener('change', handleChange);
 	});
 
 	async function loadHabits() {
@@ -118,6 +118,12 @@
 		} finally {
 			loading = false;
 		}
+	}
+
+	function goToday() {
+		const now = new Date();
+		currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+		currentWeek = getCurrentWeek(now.getFullYear(), now.getMonth() + 1);
 	}
 
 	function prevMonth() {
@@ -219,11 +225,6 @@
 	);
 
 	let showCountInput = $derived(newTargetType === 'weekly' || newTargetType === 'monthly');
-
-	let weekCount = $derived((() => {
-		const [year, month] = currentMonth.split('-').map(Number);
-		return getWeekCount(year, month);
-	})());
 </script>
 
 <div class="space-y-3">
@@ -231,60 +232,48 @@
 		<div class="flex items-center gap-2">
 			<button
 				onclick={viewMode === 'weekly' ? prevWeek : prevMonth}
-				class="rounded-lg border border-zinc-800 px-2 py-1 text-xs text-zinc-500 transition hover:border-zinc-600 hover:text-zinc-300"
+				class="rounded-lg border bg-indigo-500 border-zinc-800 px-2 py-1 text-xs transition hover:border-zinc-600 hover:text-zinc-300"
 			>
 				←
 			</button>
-			<span class="min-w-[100px] text-center text-sm font-medium text-zinc-300">
-				{currentMonth}{#if viewMode === 'weekly'} / Week {currentWeek}{/if}
+			<span class="min-w-[80px] text-center text-sm font-medium text-zinc-300">
+				{currentMonth}
 			</span>
 			<button
 				onclick={viewMode === 'weekly' ? nextWeek : nextMonth}
-				class="rounded-lg border border-zinc-800 px-2 py-1 text-xs text-zinc-500 transition hover:border-zinc-600 hover:text-zinc-300"
+				class="rounded-lg border bg-indigo-500 border-zinc-800 px-2 py-1 text-xs transition hover:border-zinc-600 hover:text-zinc-300"
 			>
 				→
 			</button>
+			<button
+				onclick={goToday}
+				class="rounded-lg border bg-indigo-500 border-zinc-800 px-2 py-1 text-xs transition hover:border-zinc-600 hover:text-zinc-300"
+			>
+				Today
+			</button>
 		</div>
 
-		{#if !isMobile}
-			<div class="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-950 p-1">
-				<button
-					type="button"
-					onclick={() => setViewMode('monthly')}
-					class="rounded-md px-3 py-1 text-xs font-medium transition {viewMode === 'monthly'
-						? 'bg-zinc-800 text-zinc-100'
-						: 'text-zinc-500 hover:text-zinc-300'}"
-				>
-					Monthly
-				</button>
-				<button
-					type="button"
-					onclick={() => setViewMode('weekly')}
-					class="rounded-md px-3 py-1 text-xs font-medium transition {viewMode === 'weekly'
-						? 'bg-zinc-800 text-zinc-100'
-						: 'text-zinc-500 hover:text-zinc-300'}"
-				>
-					Weekly
-				</button>
-			</div>
-		{/if}
+		<div class="hidden gap-1 rounded-lg border border-zinc-800 bg-zinc-950 p-1 sm:flex">
+			<button
+				type="button"
+				onclick={() => setViewMode('monthly')}
+				class="rounded-md px-3 py-1 text-xs font-medium transition {viewMode === 'monthly'
+					? 'bg-zinc-800 text-zinc-100'
+					: 'text-zinc-500 hover:text-zinc-300'}"
+			>
+				Monthly
+			</button>
+			<button
+				type="button"
+				onclick={() => setViewMode('weekly')}
+				class="rounded-md px-3 py-1 text-xs font-medium transition {viewMode === 'weekly'
+					? 'bg-zinc-800 text-zinc-100'
+					: 'text-zinc-500 hover:text-zinc-300'}"
+			>
+				Weekly
+			</button>
+		</div>
 	</div>
-
-	{#if viewMode === 'weekly'}
-		<div class="flex flex-wrap gap-1">
-			{#each Array.from({ length: weekCount }, (_, i) => i + 1) as w (w)}
-				<button
-					type="button"
-					onclick={() => (currentWeek = w)}
-					class="rounded-md px-2 py-1 text-[11px] font-medium transition {currentWeek === w
-						? 'bg-zinc-800 text-zinc-100'
-						: 'text-zinc-500 hover:text-zinc-300'}"
-				>
-					Week {w}
-				</button>
-			{/each}
-		</div>
-	{/if}
 
 	{#if habits.length > 0}
 		<HabitGrid
@@ -313,108 +302,115 @@
 		<p class="py-8 text-center text-sm text-zinc-600">No habits yet. Add your first one below.</p>
 	{/if}
 
-	<form onsubmit={addHabit} class="flex flex-col gap-2 border-t border-zinc-800/50 pt-4">
-		<!-- Mobile layout -->
-		<div class="flex flex-col gap-2 sm:hidden">
-			<input
-				type="text"
-				bind:value={newName}
-				placeholder="New habit (e.g. Exercise, Read, Meditate)"
-				class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-indigo-500 focus:outline-none"
-			/>
-			<div class="flex gap-2">
-				<select
-					bind:value={newColor}
-					class="w-auto rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
-				>
-					{#each colorOptions as c (c.value)}
-						<option value={c.value}>{c.value}</option>
-					{/each}
-				</select>
-				<select
-					bind:value={newTargetType}
-					class="flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
-				>
-					{#each targetTypes as tt (tt.value)}
-						<option value={tt.value}>{tt.label}</option>
-					{/each}
-				</select>
-				{#if showCountInput}
-					<div class="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2">
-						<input
-							type="number"
-							bind:value={newTargetCount}
-							min="1"
-							class="w-12 bg-transparent text-right text-sm text-zinc-100 focus:outline-none"
-						/>
-						<span class="text-xs text-zinc-500">
-							{newTargetType === 'weekly' ? '× / week' : '× / month'}
-						</span>
-					</div>
-				{/if}
-			</div>
-		</div>
-
-		<!-- Desktop layout -->
-		<div class="hidden sm:flex flex-col gap-2">
-			<div class="flex items-center gap-2">
-				<input
-					type="text"
-					bind:value={newName}
-					placeholder="New habit (e.g. Exercise, Read, Meditate)"
-					class="min-w-0 flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-indigo-500 focus:outline-none"
-				/>
-				<div class="flex shrink-0 gap-1">
-					{#each colorOptions as c (c.value)}
-						<button
-							type="button"
-							onclick={() => (newColor = c.value)}
-							class="h-6 w-6 rounded-full border-2 transition {newColor === c.value
-								? 'border-white ' + c.class
-								: 'border-transparent ' + c.class + ' opacity-60 hover:opacity-100'}"
-							aria-label="Select {c.value}"
-							title={c.value}
-						></button>
-					{/each}
+	<!-- Sub-container for add habit form -->
+	<div class="rounded-lg border border-zinc-800/50 bg-zinc-950/50 p-3">
+		<form onsubmit={addHabit} class="flex flex-col gap-2">
+			<!-- Mobile layout -->
+			<div class="flex flex-col gap-2 sm:hidden">
+				<div class="flex items-center gap-2">
+					<input
+						type="text"
+						bind:value={newName}
+						placeholder="New habit (e.g. Exercise, Read, Meditate)"
+						class="min-w-0 flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-indigo-500 focus:outline-none"
+					/>
+					<select
+						bind:value={newColor}
+						class="w-auto shrink-0 rounded-lg border border-zinc-800 bg-zinc-950 px-2 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
+					>
+						{#each colorOptions as c (c.value)}
+							<option value={c.value}>{c.value}</option>
+						{/each}
+					</select>
+				</div>
+				<div class="h-px bg-zinc-800/50"></div>
+				<div class="flex items-center gap-2">
+					<span class="shrink-0 text-xs text-zinc-500">Target</span>
+					<select
+						bind:value={newTargetType}
+						class="min-w-0 flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
+					>
+						{#each targetTypes as tt (tt.value)}
+							<option value={tt.value}>{tt.label}</option>
+						{/each}
+					</select>
+					{#if showCountInput}
+						<div class="flex shrink-0 items-center gap-1 rounded-lg border border-zinc-800 bg-zinc-950 px-2 py-2">
+							<input
+								type="number"
+								bind:value={newTargetCount}
+								min="1"
+								class="w-8 bg-transparent text-right text-sm text-zinc-100 focus:outline-none"
+							/>
+							<span class="text-[10px] text-zinc-500">
+								{newTargetType === 'weekly' ? '/wk' : '/mo'}
+							</span>
+						</div>
+					{/if}
 				</div>
 			</div>
 
-			<div class="h-px bg-zinc-800/50"></div>
-
-			<div class="flex items-center gap-2">
-				<span class="shrink-0 text-xs text-zinc-500">Target</span>
-				<select
-					bind:value={newTargetType}
-					class="w-auto rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
-				>
-					{#each targetTypes as tt (tt.value)}
-						<option value={tt.value}>{tt.label}</option>
-					{/each}
-				</select>
-
-				{#if showCountInput}
-					<div class="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2">
-						<input
-							type="number"
-							bind:value={newTargetCount}
-							min="1"
-							class="w-12 bg-transparent text-right text-sm text-zinc-100 focus:outline-none"
-						/>
-						<span class="text-xs text-zinc-500">
-							{newTargetType === 'weekly' ? '× / week' : '× / month'}
-						</span>
+			<!-- Desktop layout -->
+			<div class="hidden sm:flex flex-col gap-2">
+				<div class="flex items-center gap-2">
+					<input
+						type="text"
+						bind:value={newName}
+						placeholder="New habit (e.g. Exercise, Read, Meditate)"
+						class="min-w-0 flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-indigo-500 focus:outline-none"
+					/>
+					<div class="flex shrink-0 gap-1">
+						{#each colorOptions as c (c.value)}
+							<button
+								type="button"
+								onclick={() => (newColor = c.value)}
+								class="h-6 w-6 rounded-full border-2 transition {newColor === c.value
+									? 'border-white ' + c.class
+									: 'border-transparent ' + c.class + ' opacity-60 hover:opacity-100'}"
+								aria-label="Select {c.value}"
+								title={c.value}
+							></button>
+						{/each}
 					</div>
-				{/if}
-			</div>
-		</div>
+				</div>
 
-		<button
-			type="submit"
-			class="w-full rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-400"
-		>
-			Add Habit
-		</button>
-	</form>
+				<div class="h-px bg-zinc-800/50"></div>
+
+				<div class="flex items-center gap-2">
+					<span class="shrink-0 text-xs text-zinc-500">Target</span>
+					<select
+						bind:value={newTargetType}
+						class="w-auto rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
+					>
+						{#each targetTypes as tt (tt.value)}
+							<option value={tt.value}>{tt.label}</option>
+						{/each}
+					</select>
+
+					{#if showCountInput}
+						<div class="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2">
+							<input
+								type="number"
+								bind:value={newTargetCount}
+								min="1"
+								class="w-12 bg-transparent text-right text-sm text-zinc-100 focus:outline-none"
+							/>
+							<span class="text-xs text-zinc-500">
+								{newTargetType === 'weekly' ? '× / week' : '× / month'}
+							</span>
+						</div>
+					{/if}
+				</div>
+			</div>
+
+			<button
+				type="submit"
+				class="w-full rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-400"
+			>
+				Add Habit
+			</button>
+		</form>
+	</div>
 
 	{#if loading}
 		<p class="text-center text-xs text-zinc-600">Updating…</p>
