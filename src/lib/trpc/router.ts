@@ -5,6 +5,8 @@ import { subtaskRouter } from './routers/todo/subtask';
 import { locationRouter } from './routers/todo/location';
 import { stockRouter } from './routers/stock';
 import { healthRouter } from './routers/health';
+import { youtubeRouter } from './routers/youtube';
+import { newsRouter } from './routers/news';
 
 export const router = t.router({
 	todo: todoRouter,
@@ -12,7 +14,9 @@ export const router = t.router({
 	subtask: subtaskRouter,
 	location: locationRouter,
 	stock: stockRouter,
-	health: healthRouter
+	health: healthRouter,
+	youtube: youtubeRouter,
+	news: newsRouter
 });
 
 export type Router = typeof router;

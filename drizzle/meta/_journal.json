@@ -43,6 +43,27 @@
       "when": 1785751872126,
       "tag": "0005_worthless_mockingbird",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1785777837558,
+      "tag": "0006_violet_microbe",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1785779377097,
+      "tag": "0007_tense_giant_girl",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1785780526482,
+      "tag": "0008_spicy_infant_terrible",
+      "breakpoints": true
     }
   ]
 }
