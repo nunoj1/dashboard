@@ -140,7 +140,7 @@
 
 	<main class="p-6">
 		<div class="mx-auto grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-3">
-			<div class="lg:col-span-2 min-w-0">
+			<div class="min-w-0 lg:col-span-2">
 				<Card title="To-Do List">
 					<TodoForm onsubmit={addTodo} />
 
@@ -153,8 +153,8 @@
 									filter = 'active';
 								}}
 								class="rounded-md px-4 py-1.5 text-sm font-medium transition {filter === 'active'
-									? 'bg-zinc-800 text-zinc-100'
-									: 'text-zinc-500 hover:text-zinc-300'}"
+									? 'btn-toggle-active'
+									: 'btn-toggle-inactive'}"
 							>
 								Active
 							</button>
@@ -164,8 +164,8 @@
 									historyPage = 1;
 								}}
 								class="rounded-md px-4 py-1.5 text-sm font-medium transition {filter === 'done'
-									? 'bg-zinc-800 text-zinc-100'
-									: 'text-zinc-500 hover:text-zinc-300'}"
+									? 'btn-toggle-active'
+									: 'btn-toggle-inactive'}"
 							>
 								History
 							</button>
@@ -173,18 +173,20 @@
 					</div>
 
 					{#if filter === 'active'}
-						<div class="mb-4 flex gap-1">
-							{#each [['none', 'None'], ['category', 'Category'], ['location', 'Location']] as [val, label] (val)}
-								<button
-									onclick={() => (activeGroupBy = val as 'none' | 'category' | 'location')}
-									class="rounded-md border px-3 py-1 text-xs font-medium transition {activeGroupBy ===
-									val
-										? 'border-zinc-700 bg-zinc-800 text-zinc-100'
-										: 'border-transparent text-zinc-500 hover:border-zinc-800 hover:text-zinc-300'}"
-								>
-									{label}
-								</button>
-							{/each}
+						<div class="mb-4 flex items-center justify-between">
+							<div class="flex gap-1 rounded-lg border border-zinc-800/50 bg-zinc-950/50 p-1">
+								{#each [['none', 'None'], ['category', 'Category'], ['location', 'Location']] as [val, label] (val)}
+									<button
+										onclick={() => (activeGroupBy = val as 'none' | 'category' | 'location')}
+										class="rounded-md border px-3 py-1 text-xs font-medium transition {activeGroupBy ===
+										val
+											? 'btn-toggle-active'
+											: 'btn-toggle-inactive'}"
+									>
+										{label}
+									</button>
+								{/each}
+							</div>
 						</div>
 					{:else}
 						<div class="mb-4 flex gap-2">
@@ -248,7 +250,7 @@
 					<StockWidget />
 				</Card>
 			</div>
-			<div class="lg:col-span-3 min-w-0">
+			<div class="min-w-0 lg:col-span-3">
 				<Card title="Health Tracker">
 					<HealthWidget />
 				</Card>

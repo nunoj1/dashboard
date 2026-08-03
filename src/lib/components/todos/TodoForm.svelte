@@ -100,12 +100,7 @@
 			placeholder="What needs doing?"
 			class="flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 transition focus:border-indigo-500 focus:outline-none"
 		/>
-		<button
-			type="submit"
-			class="w-full rounded-lg bg-indigo-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-400 sm:w-auto sm:shrink-0"
-		>
-			Add
-		</button>
+		<button type="submit" class="btn-primary sm:w-auto sm:shrink-0"> Add </button>
 	</div>
 
 	<button
@@ -144,26 +139,30 @@
 
 			<!-- Mode toggle -->
 			<div class="border-t border-zinc-800/30 pt-4">
-				<p class="mb-2 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase">Type</p>
-				<div class="flex gap-1 rounded-lg border border-zinc-800/50 bg-zinc-950 p-1">
-					<button
-						type="button"
-						onclick={() => (mode = 'schedule')}
-						class="flex-1 rounded-md py-1.5 text-xs font-medium transition {mode === 'schedule'
-							? 'bg-zinc-800 text-zinc-100'
-							: 'text-zinc-500 hover:text-zinc-300'}"
+				<p class=" mb-2 text-[10px] font-semibold text-zinc-500 uppercase">Type</p>
+				<div class=" mb-4 flex items-center justify-between">
+					<div
+						class="w-full flex items-center gap-1 rounded-lg border border-zinc-800/50 bg-zinc-950/50 p-1"
 					>
-						📅 Due date
-					</button>
-					<button
-						type="button"
-						onclick={() => (mode = 'priority')}
-						class="flex-1 rounded-md py-1.5 text-xs font-medium transition {mode === 'priority'
-							? 'bg-zinc-800 text-zinc-100'
-							: 'text-zinc-500 hover:text-zinc-300'}"
-					>
-						⚡ Priority only
-					</button>
+						<button
+							type="button"
+							onclick={() => (mode = 'schedule')}
+							class="flex-1 rounded-md py-1.5 text-xs font-medium transition {mode === 'schedule'
+								? 'btn-toggle-active'
+								: 'btn-toggle-inactive'}"
+						>
+							📅 Due date
+						</button>
+						<button
+							type="button"
+							onclick={() => (mode = 'priority')}
+							class="flex-1 rounded-md py-1.5 text-xs font-medium transition {mode === 'priority'
+								? 'btn-toggle-active'
+								: 'btn-toggle-inactive'}"
+						>
+							⚡ Priority only
+						</button>
+					</div>
 				</div>
 			</div>
 

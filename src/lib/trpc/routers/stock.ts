@@ -49,12 +49,23 @@ async function fetchYahooData(symbol: string, range: RangeKey) {
 		changePercent = basePrice ? (change / basePrice) * 100 : 0;
 	}
 
+	const timestampsRaw = result.timestamp || [];
+	const closesRaw = result.indicators?.quote?.[0]?.close || [];
+	const valid: { time: number; price: number }[] = [];
+	for (let i = 0; i < timestampsRaw.length; i++) {
+		if (timestampsRaw[i] !== null && closesRaw[i] !== null) {
+			valid.push({ time: timestampsRaw[i] as number, price: closesRaw[i] as number });
+		}
+	}
+
 	return {
-		price,
-		change,
-		changePercent,
+		price: meta.regularMarketPrice as number,
+		previousClose: (meta.previousClose || meta.chartPreviousClose) as number,
 		currency: meta.currency as string,
-		chart: prices as number[]
+		chart: valid.map((v) => v.price),
+		timestamps: valid.map((v) => v.time),
+		changePercent,
+		change,
 	};
 }
 
@@ -81,7 +92,8 @@ export const stockRouter = t.router({
 							change: data.change,
 							changePercent: data.changePercent,
 							currency: data.currency,
-							chart: data.chart
+							chart: data.chart,
+							timestamps: data.timestamps
 						};
 					} catch {
 						return {
@@ -90,7 +102,8 @@ export const stockRouter = t.router({
 							change: null,
 							changePercent: null,
 							currency: null,
-							chart: [] as number[]
+							chart: [] as number[],
+							timestamps: [] as number[]
 						};
 					}
 				})
@@ -119,13 +132,11 @@ export const stockRouter = t.router({
 			return ticker;
 		}),
 
-	remove: t.procedure
-		.input(z.object({ id: z.number() }))
-		.mutation(async ({ input, ctx }) => {
-			if (!ctx.user) throw new Error('Unauthorized');
-			await db.delete(stockTickers).where(eq(stockTickers.id, input.id));
-			return { id: input.id };
-		})
+	remove: t.procedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
+		if (!ctx.user) throw new Error('Unauthorized');
+		await db.delete(stockTickers).where(eq(stockTickers.id, input.id));
+		return { id: input.id };
+	})
 });
 
 export type StockRouter = typeof stockRouter;

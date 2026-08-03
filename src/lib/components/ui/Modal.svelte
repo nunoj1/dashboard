@@ -41,7 +41,7 @@
 				<button
 					type="button"
 					onclick={onconfirm}
-					class="px-4 py-2 bg-indigo-500 hover:bg-indigo-400 text-white rounded-lg text-sm font-medium transition"
+					class="px-4 py-2 btn-primary transition"
 				>
 					Confirm
 				</button>

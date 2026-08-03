@@ -20,7 +20,7 @@
 			<p class="mb-4 text-zinc-400">You're signed in.</p>
 			<a
 				href={resolve('/dashboard')}
-				class="inline-block rounded-lg bg-indigo-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-400"
+				class="inline-block btn-primary"
 			>
 				Go to Dashboard
 			</a>

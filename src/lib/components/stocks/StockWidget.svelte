@@ -11,6 +11,7 @@
 		changePercent: number | null;
 		currency: string | null;
 		chart: number[];
+		timestamps: number[];
 	}
 
 	const ranges = [
@@ -29,6 +30,14 @@
 	let newName = $state('');
 	let loading = $state(false);
 	let selectedRange = $state<'1d' | '5d' | '1m' | '6m' | 'ytd' | '1y' | '5y' | 'all'>('1d');
+
+	let hoveredTickerId = $state<number | null>(null);
+	let hoverData = $state<{
+		x: number;
+		y: number;
+		price: number;
+		date: string;
+	} | null>(null);
 
 	onMount(loadTickers);
 
@@ -77,6 +86,54 @@
 			.join(' ');
 	}
 
+	function getPointCoords(data: number[], idx: number) {
+		if (data.length < 2) return { x: 0, y: 0 };
+		const min = Math.min(...data);
+		const max = Math.max(...data);
+		const range = max - min || 1;
+		const w = 120;
+		const h = 32;
+		const step = w / (data.length - 1);
+		const x = idx * step;
+		const y = h - ((data[idx] - min) / range) * h;
+		return { x, y };
+	}
+
+	function formatHoverDate(ts: number, range: string): string {
+		const d = new Date(ts * 1000);
+		if (range === '1d')
+			return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+		if (range === '5d')
+			return d.toLocaleDateString('en-US', {
+				weekday: 'short',
+				hour: '2-digit',
+				minute: '2-digit'
+			});
+		return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+	}
+
+	function handleChartMove(e: MouseEvent, t: Ticker) {
+		if (t.chart.length < 2 || !t.timestamps?.length) return;
+		const svg = e.currentTarget as SVGSVGElement;
+		const rect = svg.getBoundingClientRect();
+		const ratio = (e.clientX - rect.left) / rect.width;
+		const idx = Math.round(ratio * (t.chart.length - 1));
+		const clamped = Math.max(0, Math.min(idx, t.chart.length - 1));
+		const coords = getPointCoords(t.chart, clamped);
+		hoverData = {
+			x: coords.x,
+			y: coords.y,
+			price: t.chart[clamped],
+			date: formatHoverDate(t.timestamps[clamped], selectedRange)
+		};
+		hoveredTickerId = t.id;
+	}
+
+	function handleChartLeave() {
+		hoveredTickerId = null;
+		hoverData = null;
+	}
+
 	function changeColor(p: number | null) {
 		if (p === null) return 'text-zinc-500';
 		return p >= 0 ? 'text-emerald-400' : 'text-red-400';
@@ -89,18 +146,18 @@
 </script>
 
 <div class="space-y-3">
-	<div class="flex flex-wrap gap-1">
-		{#each ranges as r (r.value)}
-			<button
-				type="button"
-				onclick={() => setRange(r.value)}
-				class="rounded-md px-2 py-1 text-[11px] font-medium transition {selectedRange === r.value
-					? 'bg-indigo-500 text-white'
-					: 'text-zinc-500 hover:text-zinc-300'}"
-			>
-				{r.label}
-			</button>
-		{/each}
+	<div class="mb-4 flex flex-wrap items-center justify-between">
+		<div class="flex gap-1 rounded-lg border border-zinc-800/50 bg-zinc-950/50 p-1">
+			{#each ranges as r (r.value)}
+				<button
+					type="button"
+					onclick={() => setRange(r.value)}
+					class={selectedRange === r.value ? 'btn-toggle-active' : 'btn-toggle-inactive'}
+				>
+					{r.label}
+				</button>
+			{/each}
+		</div>
 	</div>
 
 	{#if tickers.length > 0}
@@ -143,18 +200,57 @@
 						{/if}
 
 						{#if t.chart.length > 1}
-							<div class="min-w-0 flex-1">
+							<div class="relative min-w-0 flex-1">
 								<svg
 									viewBox="0 0 120 32"
-									class="h-8 w-full {changeBg(t.changePercent)}"
+									class="h-8 w-full cursor-crosshair {changeBg(t.changePercent)}"
 									fill="none"
 									stroke-width="2"
 									stroke-linecap="round"
 									stroke-linejoin="round"
 									preserveAspectRatio="none"
+									onmousemove={(e) => handleChartMove(e, t)}
+									onmouseleave={handleChartLeave}
 								>
 									<path d={sparklinePath(t.chart)} vector-effect="non-scaling-stroke" />
+									{#if hoveredTickerId === t.id && hoverData}
+										<line
+											x1={hoverData.x}
+											y1="0"
+											x2={hoverData.x}
+											y2="32"
+											stroke="#71717a"
+											stroke-width="0.5"
+											stroke-dasharray="2,2"
+											vector-effect="non-scaling-stroke"
+										/>
+										<line
+											x1="0"
+											y1={hoverData.y}
+											x2="120"
+											y2={hoverData.y}
+											stroke="#71717a"
+											stroke-width="0.5"
+											stroke-dasharray="2,2"
+											vector-effect="non-scaling-stroke"
+										/>
+										<circle cx={hoverData.x} cy={hoverData.y} r="1.5" fill="white" />
+									{/if}
 								</svg>
+
+								{#if hoveredTickerId === t.id && hoverData}
+									<div
+										class="pointer-events-none absolute z-10 -mt-1 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-[10px] text-zinc-100 shadow-xl"
+										style="left: {Math.min(
+											Math.max((hoverData.x / 120) * 100, 5),
+											75
+										)}%; transform: translateY(-100%);"
+									>
+										<span class="font-semibold">{hoverData.price.toFixed(2)}</span>
+										<span class="ml-1 text-zinc-500">{t.currency}</span>
+										<span class="ml-2 text-zinc-400">{hoverData.date}</span>
+									</div>
+								{/if}
 							</div>
 						{/if}
 					</div>
@@ -180,12 +276,7 @@
 				class="min-w-0 flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-indigo-500 focus:outline-none"
 			/>
 		</div>
-		<button
-			type="submit"
-			class="w-full rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-400"
-		>
-			Add
-		</button>
+		<button type="submit" class="btn-primary">Add</button>
 	</form>
 
 	{#if loading}
