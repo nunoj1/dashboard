@@ -2,7 +2,6 @@
 	import DashboardHeader from '$lib/components/layout/DashboardHeader.svelte';
 	import StockWidget from '$lib/components/stocks/StockWidget.svelte';
 	import HealthWidget from '$lib/components/health/HealthWidget.svelte';
-	import YouTubeWidget from '$lib/components/youtube/YouTubeWidget.svelte';
 	import NewsWidget from '$lib/components/news/NewsWidget.svelte';
 	import TodoWidget from '$lib/components/todos/TodoWidget.svelte';
 	import Card from '$lib/components/ui/Card.svelte';
@@ -22,12 +21,6 @@
 			<div class="min-w-0">
 				<Card title="Stocks">
 					<StockWidget />
-				</Card>
-			</div>
-
-			<div class="min-w-0 lg:col-span-2">
-				<Card title="YouTube Feed">
-					<YouTubeWidget />
 				</Card>
 			</div>
 

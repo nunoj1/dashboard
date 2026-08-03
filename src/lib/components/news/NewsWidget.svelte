@@ -2,9 +2,9 @@
 	import { trpc } from '$lib/trpc/client';
 	import { onMount } from 'svelte';
 	import { RefreshCw, Plus, Search } from '@lucide/svelte';
-	import Pagination from '$lib/components/ui/Pagination.svelte';
 	import NewsArticleCard from '$lib/components/news/NewsArticleCard.svelte';
 	import NewsSourceBadge from '$lib/components/news/NewsSourceBadge.svelte';
+	import SkeletonArticleCard from '$lib/components/ui/SkeletonArticleCard.svelte';
 
 	interface FeedItem {
 		title: string;
@@ -49,6 +49,7 @@
 	let timeRange = $state<'hour' | 'day' | 'week' | 'month' | 'all'>('week');
 	let feedPage = $state(1);
 	let feedTotalPages = $state(0);
+	let sentinelRef = $state<HTMLDivElement | null>(null);
 
 	onMount(async () => {
 		await loadConfig();
@@ -74,12 +75,21 @@
 		}
 	}
 
-	async function fetchFeed() {
+	async function fetchFeed(append = false) {
+		if (loadingFeed) return;
 		loadingFeed = true;
 		error = '';
 		try {
-			const result = await trpc().news.fetch.query({ timeRange, page: feedPage, limit: 5 });
-			feed = result.items;
+			const result = await trpc().news.fetch.query({
+				timeRange,
+				page: feedPage,
+				limit: 10
+			});
+			if (append) {
+				feed = [...feed, ...result.items];
+			} else {
+				feed = result.items;
+			}
 			feedTotalPages = result.totalPages;
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to fetch';
@@ -97,7 +107,7 @@
 			newSourceName = '';
 			newSourceUrl = '';
 			await loadConfig();
-			feedPage = 1;
+			resetFeed();
 			await fetchFeed();
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to add source';
@@ -107,14 +117,14 @@
 	async function handleToggleSource(id: number) {
 		await trpc().news.toggleSource.mutate({ id });
 		await loadConfig();
-		feedPage = 1;
+		resetFeed();
 		await fetchFeed();
 	}
 
 	async function handleRemoveSource(id: number) {
 		await trpc().news.removeSource.mutate({ id });
 		await loadConfig();
-		feedPage = 1;
+		resetFeed();
 		await fetchFeed();
 	}
 
@@ -148,13 +158,14 @@
 
 	function setTimeRange(range: typeof timeRange) {
 		timeRange = range;
-		feedPage = 1;
+		resetFeed();
 		fetchFeed();
 	}
 
-	function goToFeedPage(p: number) {
-		feedPage = p;
-		fetchFeed();
+	function resetFeed() {
+		feed = [];
+		feedPage = 1;
+		feedTotalPages = 0;
 	}
 
 	let filteredFeed = $derived(
@@ -176,10 +187,28 @@
 				)
 			: saved
 	);
+
+	// Infinite scroll observer — scoped to the feed list container
+	let feedListRef = $state<HTMLDivElement | null>(null);
+
+	$effect(() => {
+		if (!sentinelRef || !feedListRef) return;
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0].isIntersecting && feedPage < feedTotalPages && !loadingFeed) {
+					feedPage++;
+					fetchFeed(true);
+				}
+			},
+			{ root: feedListRef, rootMargin: '100px' }
+		);
+		observer.observe(sentinelRef);
+		return () => observer.disconnect();
+	});
 </script>
 
 <div class="space-y-3">
-	<!-- Tabs — 50% width each -->
+	<!-- Tabs -->
 	<div class="card-inner flex p-1">
 		<button
 			onclick={() => (activeTab = 'feed')}
@@ -228,7 +257,7 @@
 		</div>
 
 		<!-- Time filter -->
-		<div class="card-inner flex  w-full gap-1 p-1">
+		<div class="card-inner flex w-full gap-1 p-1">
 			{#each [['hour', '1H'], ['day', '1D'], ['week', '1W'], ['month', '1M'], ['all', 'All']] as [val, label]}
 				<button
 					onclick={() => setTimeRange(val as typeof timeRange)}
@@ -250,14 +279,21 @@
 					class="input w-full pl-8"
 				/>
 			</div>
-			<button onclick={fetchFeed} class="btn-nav w-full sm:w-auto" title="Fetch news">
+			<button
+				onclick={() => {
+					resetFeed();
+					fetchFeed();
+				}}
+				class="btn-nav w-full sm:w-auto"
+				title="Fetch news"
+			>
 				<RefreshCw class="mr-1 inline h-3 w-3" /> Refresh
 			</button>
 		</div>
 
 		<!-- Feed Articles -->
 		{#if filteredFeed.length > 0}
-			<div class="space-y-2">
+			<div bind:this={feedListRef} class="max-h-96 space-y-2 overflow-y-auto pr-1">
 				{#each filteredFeed as item (item.url)}
 					<NewsArticleCard
 						title={item.title}
@@ -271,20 +307,33 @@
 						onSave={() => saveArticle(item)}
 					/>
 				{/each}
+				{#if loadingFeed}
+					{#each Array(3) as _, i (i)}
+						<SkeletonArticleCard />
+					{/each}
+				{/if}
+				{#if feedPage < feedTotalPages}
+					<div bind:this={sentinelRef} class="h-4"></div>
+				{/if}
 			</div>
-			<Pagination current={feedPage} total={feedTotalPages} onChange={goToFeedPage} />
+		{:else if loadingFeed}
+			<div class="max-h-96 space-y-2 overflow-y-auto pr-1">
+				{#each Array(5) as _, i (i)}
+					<SkeletonArticleCard />
+				{/each}
+			</div>
 		{:else}
 			<p class="py-6 text-center text-sm text-zinc-600">
-				{loadingFeed
+				{error
 					? ''
-					: error
-						? ''
-						: sources.length === 0
-							? 'Add a news source to get started.'
-							: 'Click refresh to fetch news.'}
+					: sources.length === 0
+						? 'Add a news source to get started.'
+						: 'Click refresh to fetch news.'}
 			</p>
 		{/if}
-		{#if loadingFeed}<p class="text-center text-xs text-zinc-600">Fetching...</p>{/if}
+		{#if loadingFeed && filteredFeed.length === 0}<p class="text-center text-xs text-zinc-600">
+				Fetching...
+			</p>{/if}
 	{:else}
 		<!-- Saved -->
 		<div class="relative">

@@ -5,7 +5,6 @@ import { subtaskRouter } from './routers/todo/subtask';
 import { locationRouter } from './routers/todo/location';
 import { stockRouter } from './routers/stock';
 import { healthRouter } from './routers/health';
-import { youtubeRouter } from './routers/youtube';
 import { newsRouter } from './routers/news';
 
 export const router = t.router({
@@ -15,7 +14,6 @@ export const router = t.router({
 	location: locationRouter,
 	stock: stockRouter,
 	health: healthRouter,
-	youtube: youtubeRouter,
 	news: newsRouter
 });
 
