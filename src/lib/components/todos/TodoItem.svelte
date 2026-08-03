@@ -24,12 +24,11 @@
 		subtasks: Subtask[];
 	}
 
-	let { todo, ontoggle, onconfirmDone, onsubtaskToggle, onsubtaskDelete, alwaysExpanded = false } = $props<{
+	let { todo, ontoggle, onconfirmDone, onsubtaskToggle, alwaysExpanded = false } = $props<{
 		todo: Todo;
 		ontoggle: (id: number) => void;
 		onconfirmDone: (id: number) => void;
 		onsubtaskToggle: (id: number) => void;
-		onsubtaskDelete: (id: number) => void;
 		alwaysExpanded?: boolean;
 	}>();
 
@@ -49,12 +48,12 @@
 						{todo.title}
 					</span>
 					{#if todo.category}
-						<span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700/50">
+						<span class="badge">
 							{todo.category}
 						</span>
 					{/if}
 					{#if todo.location}
-						<span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800/50 text-zinc-500 border border-zinc-800/50">
+						<span class="badge-muted">
 							📍 {todo.location}
 						</span>
 					{/if}
@@ -92,12 +91,12 @@
 						{todo.title}
 					</span>
 					{#if todo.category}
-						<span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700/50">
+						<span class="badge">
 							{todo.category}
 						</span>
 					{/if}
 					{#if todo.location}
-						<span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800/50 text-zinc-500 border border-zinc-800/50">
+						<span class="badge-muted">
 							📍 {todo.location}
 						</span>
 					{/if}
@@ -146,7 +145,6 @@
 				<SubtaskList
 					subtasks={todo.subtasks}
 					ontoggle={onsubtaskToggle}
-					ondelete={onsubtaskDelete}
                     disabled={!!todo.done}
 				/>
 			{/if}

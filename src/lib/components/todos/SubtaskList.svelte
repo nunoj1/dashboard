@@ -7,10 +7,9 @@
 		done: boolean | null;
 	}
 
-	let { subtasks, ontoggle, ondelete, disabled = false } = $props<{
+	let { subtasks, ontoggle, disabled = false } = $props<{
 		subtasks: Subtask[];
 		ontoggle: (id: number) => void;
-		ondelete: (id: number) => void;
 		disabled?: boolean;
 	}>();
 
@@ -32,12 +31,6 @@
 		<div class="flex items-center gap-2 group/sub">
 			<Checkbox checked={!!st.done} onchange={() => ontoggle(st.id)} {disabled} />
 			<span class="text-sm {st.done ? 'text-zinc-600 line-through' : 'text-zinc-300'}">{st.title}</span>
-			<button
-				onclick={() => ondelete(st.id)}
-				class="text-zinc-700 hover:text-red-400 opacity-0 group-hover/sub:opacity-100 transition text-xs ml-auto"
-			>
-				Remove
-			</button>
 		</div>
 	{/each}
 </div>

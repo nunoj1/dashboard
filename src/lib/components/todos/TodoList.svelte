@@ -29,7 +29,6 @@
 		ontoggle,
 		onconfirmDone,
 		onsubtaskToggle,
-		onsubtaskDelete,
 		alwaysExpanded = false
 	} = $props<{
 		todos: Todo[];
@@ -38,7 +37,6 @@
 		ontoggle: (id: number) => void;
 		onconfirmDone: (id: number) => void;
 		onsubtaskToggle: (id: number) => void;
-		onsubtaskDelete: (id: number) => void;
 		alwaysExpanded?: boolean;
 	}>();
 
@@ -98,7 +96,6 @@
 						{ontoggle}
 						{onconfirmDone}
 						{onsubtaskToggle}
-						{onsubtaskDelete}
 						{alwaysExpanded}
 					/>
 				{/each}
@@ -113,7 +110,6 @@
 				{ontoggle}
 				{onconfirmDone}
 				{onsubtaskToggle}
-				{onsubtaskDelete}
 				{alwaysExpanded}
 			/>
 		{/each}

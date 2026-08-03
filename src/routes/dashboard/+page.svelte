@@ -144,7 +144,7 @@
 				<Card title="To-Do List">
 					<TodoForm onsubmit={addTodo} />
 
-					<div class="mt-6 mb-4 border-t border-zinc-800/50"></div>
+					<div class="mt-6 mb-4 separator"></div>
 
 					<div class="mb-4 flex items-center justify-between">
 						<div class="flex gap-1 card-inner p-1">
@@ -211,11 +211,10 @@
 						ontoggle={toggle}
 						onconfirmDone={confirmDone}
 						onsubtaskToggle={subtaskToggle}
-						onsubtaskDelete={subtaskDelete}
 					/>
 
 					{#if filter === 'done' && totalPages > 1}
-						<div class="mt-6 flex items-center justify-between border-t border-zinc-800/50 pt-4">
+						<div class="mt-6 flex items-center justify-between separator pt-4">
 							<span class="label">
 								Page {historyPage} of {totalPages} ({historyTotal} total)
 							</span>

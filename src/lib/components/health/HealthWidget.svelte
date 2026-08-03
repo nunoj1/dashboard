@@ -227,7 +227,7 @@
 
 <div class="space-y-3">
 	<div class="flex flex-wrap items-center justify-between gap-2">
-		<div class="flex items-center gap-1 card-inner p-1">
+		<div class="flex flex-wrap items-center gap-1 card-inner p-1">
 			<button onclick={viewMode === 'weekly' ? prevWeek : prevMonth} class="btn-nav"> ← </button>
 			<span class="min-w-[80px] text-center text-sm font-medium text-zinc-300">
 				{currentMonth}
@@ -391,7 +391,7 @@
 				</div>
 			</div>
 
-			<button type="submit" class="btn-primary"> Add Habit </button>
+			<button type="submit" class="w-full btn-primary"> Add Habit </button>
 		</form>
 	</div>
 

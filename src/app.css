@@ -1,13 +1,12 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 html {
 	color-scheme: dark;
 }
 
-
 @layer components {
 	.btn-primary {
-		@apply w-full rounded-lg bg-violet-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-700;
+		@apply rounded-lg bg-violet-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-700;
 	}
 	.btn-nav {
 		@apply rounded-lg border border-purple-800/40 bg-purple-900/30 px-2 py-1 text-xs font-medium text-purple-200 transition hover:border-purple-700/50 hover:bg-purple-800/40 hover:text-purple-100;
@@ -32,5 +31,22 @@ html {
 	}
 	.label {
 		@apply text-[10px] font-semibold tracking-wider text-zinc-500 uppercase;
+	}
+	/* Badge for tags (category, location) */
+	.badge {
+		@apply rounded border border-zinc-700/50 bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400;
+	}
+	.badge-muted {
+		@apply rounded border border-zinc-800/50 bg-zinc-800/50 px-1.5 py-0.5 text-[10px] text-zinc-500;
+	}
+
+	/* Lighter separator for form sub-sections */
+	.separator-light {
+		@apply border-t border-zinc-800/30;
+	}
+
+	/* Link-style text */
+	.link {
+		@apply text-indigo-400 transition hover:text-indigo-300;
 	}
 }

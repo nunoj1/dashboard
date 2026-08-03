@@ -100,7 +100,7 @@
 			placeholder="What needs doing?"
 			class="input flex-1 px-4 py-2.5"
 		/>
-		<button type="submit" class="btn-primary sm:w-auto sm:shrink-0"> Add </button>
+		<button type="submit" class="w-full btn-primary sm:w-auto sm:shrink-0"> Add </button>
 	</div>
 
 	<button
@@ -138,7 +138,7 @@
 			</div>
 
 			<!-- Mode toggle -->
-			<div class="border-t border-zinc-800/30 pt-4">
+			<div class="separator-light pt-4">
 				<p class=" mb-2 text-[10px] font-semibold text-zinc-500 uppercase">Type</p>
 				<div class=" mb-4 flex items-center justify-between">
 					<div
@@ -167,7 +167,7 @@
 			</div>
 
 			{#if mode === 'schedule'}
-				<div class="border-t border-zinc-800/30 pt-4">
+				<div class="separator-light pt-4">
 					<p class="mb-1.5 label">Due</p>
 					<div class="flex gap-3">
 						<input
@@ -184,7 +184,7 @@
 					<p class="mt-1.5 text-xs text-zinc-600">Priority auto-set by urgency.</p>
 				</div>
 			{:else}
-				<div class="border-t border-zinc-800/30 pt-4">
+				<div class="separator-light pt-4">
 					<p class="mb-1.5 label">
 						Priority
 					</p>
@@ -199,7 +199,7 @@
 				</div>
 			{/if}
 
-			<div class="border-t border-zinc-800/30 pt-4">
+			<div class="separator-light pt-4">
 				<p class="mb-1.5 label">
 					Description
 				</p>
@@ -211,7 +211,7 @@
 				></textarea>
 			</div>
 
-			<div class="border-t border-zinc-800/30 pt-4">
+			<div class="separator-light pt-4">
 				<div class="mb-2 flex items-center justify-between">
 					<p class="label">Subtasks</p>
 					<span class="text-[10px] text-zinc-600">Break into smaller steps</span>
@@ -238,7 +238,7 @@
 					<button
 						type="button"
 						onclick={addSubtaskInput}
-						class="mt-1 flex items-center gap-1 text-xs text-indigo-400 transition hover:text-indigo-300"
+						class="mt-1 flex items-center gap-1 text-xs link"
 					>
 						<svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path

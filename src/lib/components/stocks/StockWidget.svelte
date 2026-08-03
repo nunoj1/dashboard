@@ -146,26 +146,22 @@
 </script>
 
 <div class="space-y-3">
-	<div class="min-w-0">
-		<div class="flex flex-wrap gap-1 card-inner p-1">
-			{#each ranges as r (r.value)}
-				<button
-					type="button"
-					onclick={() => setRange(r.value)}
-					class={selectedRange === r.value ? 'btn-toggle-active' : 'btn-toggle-inactive'}
-				>
-					{r.label}
-				</button>
-			{/each}
-		</div>
+	<div class="card-inner flex flex-wrap gap-1 p-1">
+		{#each ranges as r (r.value)}
+			<button
+				type="button"
+				onclick={() => setRange(r.value)}
+				class={selectedRange === r.value ? 'btn-toggle-active' : 'btn-toggle-inactive'}
+			>
+				{r.label}
+			</button>
+		{/each}
 	</div>
 
 	{#if tickers.length > 0}
-		<div class="max-h-[400px] space-y-2 overflow-y-auto pr-1">
+		<div class="max-h-100 space-y-2 overflow-y-auto pr-1">
 			{#each tickers as t (t.id)}
-				<div
-					class="group relative card-inner p-3 transition hover:border-zinc-700/50"
-				>
+				<div class="group card-inner relative p-3 transition hover:border-zinc-700/50">
 					<button
 						type="button"
 						onclick={() => remove(t.id)}
@@ -261,22 +257,17 @@
 		<p class="py-6 text-center text-sm text-zinc-600">No tickers yet. Add one below.</p>
 	{/if}
 
-	<form onsubmit={addTicker} class="flex flex-col gap-2 border-t border-zinc-800/50 pt-3">
+	<form onsubmit={addTicker} class="flex flex-col gap-2 separator pt-3">
 		<div class="flex gap-2">
 			<input
 				type="text"
 				bind:value={newSymbol}
 				placeholder="Symbol (e.g. BTC-USD)"
-				class="min-w-0 flex-1 input"
+				class="input min-w-0 flex-1"
 			/>
-			<input
-				type="text"
-				bind:value={newName}
-				placeholder="Label"
-				class="min-w-0 flex-1 input"
-			/>
+			<input type="text" bind:value={newName} placeholder="Label" class="input min-w-0 flex-1" />
 		</div>
-		<button type="submit" class="btn-primary">Add</button>
+		<button type="submit" class="btn-primary w-full">Add</button>
 	</form>
 
 	{#if loading}

@@ -34,7 +34,7 @@
 				<button
 					type="button"
 					onclick={oncancel}
-					class="px-4 py-2 text-sm text-zinc-300 hover:text-white transition"
+					class="px-4 py-2 btn-toggle-inactive"
 				>
 					Cancel
 				</button>
