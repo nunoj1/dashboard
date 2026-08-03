@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { eq, and, desc } from 'drizzle-orm';
 import { db } from '$lib/db';
-import { youtubeChannels, youtubeVideos } from '$lib/db/schema/index';
+import { youtubeWatched } from '$lib/db/schema/index';
 import { t } from '../init';
 import { env } from '$env/dynamic/private';
 
@@ -11,224 +11,209 @@ async function fetchYouTube<T>(url: string): Promise<T> {
 	return res.json();
 }
 
-async function resolveChannel(query: string) {
-	let data = await fetchYouTube<{
-		items?: Array<{
-			id: string;
-			snippet: Record<string, unknown>;
-			contentDetails: Record<string, unknown>;
-		}>;
-	}>(
-		`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails&forHandle=${encodeURIComponent(query)}&key=${env.YOUTUBE_API_KEY}`
-	);
-	if (data.items?.length) return data.items[0];
-
-	data = await fetchYouTube<{
-		items?: Array<{
-			id: string;
-			snippet: Record<string, unknown>;
-			contentDetails: Record<string, unknown>;
-		}>;
-	}>(
-		`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails&id=${encodeURIComponent(query)}&key=${env.YOUTUBE_API_KEY}`
-	);
-	if (data.items?.length) return data.items[0];
-
-	const search = await fetchYouTube<{
-		items?: Array<{ id: { channelId: string }; snippet: Record<string, unknown> }>;
-	}>(
-		`https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(query)}&maxResults=1&key=${env.YOUTUBE_API_KEY}`
-	);
-	if (!search.items?.length) throw new Error('Channel not found');
-
-	const channelId = search.items[0].id.channelId;
-	data = await fetchYouTube<{
-		items?: Array<{
-			id: string;
-			snippet: Record<string, unknown>;
-			contentDetails: Record<string, unknown>;
-		}>;
-	}>(
-		`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails&id=${channelId}&key=${env.YOUTUBE_API_KEY}`
-	);
-	if (!data.items?.length) throw new Error('Channel not found');
-	return data.items[0];
-}
-
-async function fetchLatestVideos(uploadsPlaylistId: string) {
-	const data = await fetchYouTube<{
-		items?: Array<{
-			snippet: {
-				resourceId: { videoId: string };
-				title: string;
-				thumbnails: { medium?: { url: string }; default?: { url: string } };
-				publishedAt: string;
-			};
-		}>;
-	}>(
-		`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=10&key=${env.YOUTUBE_API_KEY}`
-	);
-	return (data.items || []).map((item) => ({
-		videoId: item.snippet.resourceId.videoId,
-		title: item.snippet.title,
-		thumbnailUrl:
-			item.snippet.thumbnails?.medium?.url ||
-			item.snippet.thumbnails?.default?.url ||
-			null,
-		publishedAt: item.snippet.publishedAt
-	}));
+function getPublishedAfter(filter: string): string | undefined {
+	const now = new Date();
+	switch (filter) {
+		case 'day':
+			now.setDate(now.getDate() - 1);
+			break;
+		case 'week':
+			now.setDate(now.getDate() - 7);
+			break;
+		case 'month':
+			now.setMonth(now.getMonth() - 1);
+			break;
+		case 'year':
+			now.setFullYear(now.getFullYear() - 1);
+			break;
+		default:
+			return undefined;
+	}
+	return now.toISOString();
 }
 
 export const youtubeRouter = t.router({
-	getChannels: t.procedure.query(async ({ ctx }) => {
-		if (!ctx.user) return [];
-		return db.select().from(youtubeChannels).orderBy(youtubeChannels.order).all();
-	}),
-
-	getVideos: t.procedure
+	searchChannels: t.procedure
 		.input(
 			z
 				.object({
-					limit: z.number().min(1).max(50).default(20),
-					includeWatched: z.boolean().default(true)
+					query: z.string().min(1),
+					maxResults: z.number().min(1).max(10).default(5)
 				})
-				.default({ limit: 20, includeWatched: true })
+				.default({ query: '', maxResults: 5 })
 		)
 		.query(async ({ input }) => {
-			const where = input.includeWatched
-				? undefined
-				: eq(youtubeVideos.watched, false);
-			return db
-				.select()
-				.from(youtubeVideos)
-				.where(where)
-				.orderBy(desc(youtubeVideos.publishedAt))
-				.limit(input.limit)
-				.all();
-		}),
-
-	addChannel: t.procedure
-		.input(z.object({ query: z.string().min(1) }))
-		.mutation(async ({ input, ctx }) => {
-			if (!ctx.user) throw new Error('Unauthorized');
 			if (!env.YOUTUBE_API_KEY) throw new Error('YouTube API key not configured');
+			if (!input.query.trim()) return [];
 
-			const channel = await resolveChannel(input.query);
-			const snippet = channel.snippet as {
-				title: string;
-				thumbnails: { default?: { url: string } };
-			};
-			const contentDetails = channel.contentDetails as {
-				relatedPlaylists: { uploads: string };
-			};
+			const q = input.query.trim();
+			let searchUrl: string;
 
-			const existing = await db
-				.select()
-				.from(youtubeChannels)
-				.where(
-					and(
-						eq(youtubeChannels.userId, ctx.user.id),
-						eq(youtubeChannels.channelId, channel.id)
-					)
-				)
-				.all();
-			if (existing.length) throw new Error('Channel already added');
-
-			await db.insert(youtubeChannels).values({
-				userId: ctx.user.id,
-				channelId: channel.id,
-				channelName: snippet.title,
-				thumbnailUrl: snippet.thumbnails?.default?.url || null
-			});
-
-			const videos = await fetchLatestVideos(contentDetails.relatedPlaylists.uploads);
-			for (const v of videos) {
-				await db
-					.insert(youtubeVideos)
-					.values({
-						channelId: channel.id,
-						videoId: v.videoId,
-						title: v.title,
-						thumbnailUrl: v.thumbnailUrl,
-						publishedAt: v.publishedAt,
-						fetchedAt: new Date()
-					})
-					.onConflictDoNothing();
+			if (q.startsWith('@')) {
+				const handle = q.slice(1);
+				const data = await fetchYouTube<{
+					items?: Array<{
+						id: string;
+						snippet: {
+							title: string;
+							thumbnails: { default?: { url: string }; medium?: { url: string } };
+							description: string;
+						};
+					}>;
+				}>(
+					`https://www.googleapis.com/youtube/v3/channels?part=snippet&forHandle=${encodeURIComponent(handle)}&key=${env.YOUTUBE_API_KEY}`
+				);
+				return (data.items || []).map((ch) => ({
+					channelId: ch.id,
+					channelName: ch.snippet.title,
+					thumbnailUrl: ch.snippet.thumbnails?.medium?.url || ch.snippet.thumbnails?.default?.url || null,
+					description: ch.snippet.description
+				}));
 			}
 
-			return { channelId: channel.id };
+			if (q.startsWith('#')) {
+				const tag = q.slice(1);
+				searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(tag)}&maxResults=${input.maxResults}&key=${env.YOUTUBE_API_KEY}`;
+			} else {
+				searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(q)}&maxResults=${input.maxResults}&key=${env.YOUTUBE_API_KEY}`;
+			}
+
+			const searchData = await fetchYouTube<{
+				items?: Array<{
+					id: { channelId: string };
+					snippet: {
+						title: string;
+						thumbnails: { default?: { url: string }; medium?: { url: string } };
+						description: string;
+					};
+				}>;
+			}>(searchUrl);
+
+			const channelIds = (searchData.items || [])
+				.map((item) => item.id.channelId)
+				.filter(Boolean);
+
+			if (channelIds.length === 0) return [];
+
+			const channelsData = await fetchYouTube<{
+				items?: Array<{
+					id: string;
+					snippet: {
+						title: string;
+						thumbnails: { default?: { url: string }; medium?: { url: string } };
+						description: string;
+					};
+				}>;
+			}>(
+				`https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelIds.join(',')}&key=${env.YOUTUBE_API_KEY}`
+			);
+
+			return (channelsData.items || []).map((ch) => ({
+				channelId: ch.id,
+				channelName: ch.snippet.title,
+				thumbnailUrl: ch.snippet.thumbnails?.medium?.url || ch.snippet.thumbnails?.default?.url || null,
+				description: ch.snippet.description
+			}));
 		}),
 
-	removeChannel: t.procedure
-		.input(z.object({ id: z.number() }))
-		.mutation(async ({ input, ctx }) => {
-			if (!ctx.user) throw new Error('Unauthorized');
-			const [ch] = await db
-				.select()
-				.from(youtubeChannels)
-				.where(eq(youtubeChannels.id, input.id))
-				.all();
-			if (!ch) throw new Error('Not found');
-			await db.delete(youtubeVideos).where(eq(youtubeVideos.channelId, ch.channelId));
-			await db.delete(youtubeChannels).where(eq(youtubeChannels.id, input.id));
-			return { id: input.id };
-		}),
+	getChannelVideos: t.procedure
+		.input(
+			z
+				.object({
+					channelId: z.string().min(1),
+					timeFilter: z.enum(['day', 'week', 'month', 'year', 'all']).default('all'),
+					maxResults: z.number().min(1).max(50).default(10)
+				})
+				.default({ channelId: '', timeFilter: 'all', maxResults: 10 })
+		)
+		.query(async ({ input }) => {
+			if (!env.YOUTUBE_API_KEY) throw new Error('YouTube API key not configured');
 
-	markWatched: t.procedure
-		.input(z.object({ videoId: z.string() }))
-		.mutation(async ({ input }) => {
-			const [video] = await db
-				.select()
-				.from(youtubeVideos)
-				.where(eq(youtubeVideos.videoId, input.videoId))
-				.all();
-			if (!video) throw new Error('Video not found');
-			await db
-				.update(youtubeVideos)
-				.set({ watched: !video.watched })
-				.where(eq(youtubeVideos.videoId, input.videoId));
-			return { watched: !video.watched };
-		}),
-
-	refresh: t.procedure.mutation(async ({ ctx }) => {
-		if (!ctx.user) throw new Error('Unauthorized');
-		if (!env.YOUTUBE_API_KEY) throw new Error('YouTube API key not configured');
-
-		const channels = await db
-			.select()
-			.from(youtubeChannels)
-			.where(eq(youtubeChannels.userId, ctx.user.id))
-			.all();
-
-		for (const ch of channels) {
-			const data = await fetchYouTube<{
+			const channelData = await fetchYouTube<{
 				items?: Array<{
 					contentDetails: { relatedPlaylists: { uploads: string } };
 				}>;
 			}>(
-				`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${ch.channelId}&key=${env.YOUTUBE_API_KEY}`
+				`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${input.channelId}&key=${env.YOUTUBE_API_KEY}`
 			);
-			const uploadsPlaylistId = data.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
-			if (!uploadsPlaylistId) continue;
 
-			const videos = await fetchLatestVideos(uploadsPlaylistId);
-			for (const v of videos) {
-				await db
-					.insert(youtubeVideos)
-					.values({
-						channelId: ch.channelId,
-						videoId: v.videoId,
-						title: v.title,
-						thumbnailUrl: v.thumbnailUrl,
-						publishedAt: v.publishedAt,
-						fetchedAt: new Date()
-					})
-					.onConflictDoNothing();
+			const uploadsPlaylistId = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+			if (!uploadsPlaylistId) return [];
+
+			const publishedAfter = getPublishedAfter(input.timeFilter);
+			let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=${input.maxResults}&key=${env.YOUTUBE_API_KEY}`;
+			if (publishedAfter) {
+				url += `&publishedAfter=${publishedAfter}`;
 			}
-		}
 
-		return { refreshed: channels.length };
-	})
+			const data = await fetchYouTube<{
+				items?: Array<{
+					snippet: {
+						resourceId: { videoId: string };
+						title: string;
+						thumbnails: { medium?: { url: string }; default?: { url: string } };
+						publishedAt: string;
+						channelTitle: string;
+					};
+				}>;
+			}>(url);
+
+			return (data.items || []).map((item) => ({
+				videoId: item.snippet.resourceId.videoId,
+				title: item.snippet.title,
+				thumbnailUrl:
+					item.snippet.thumbnails?.medium?.url ||
+					item.snippet.thumbnails?.default?.url ||
+					null,
+				publishedAt: item.snippet.publishedAt,
+				channelName: item.snippet.channelTitle
+			}));
+		}),
+
+	getWatched: t.procedure.query(async ({ ctx }) => {
+		if (!ctx.user) return [];
+		return db
+			.select()
+			.from(youtubeWatched)
+			.where(eq(youtubeWatched.userId, ctx.user.id))
+			.orderBy(desc(youtubeWatched.watchedAt))
+			.all();
+	}),
+
+	toggleWatched: t.procedure
+		.input(z.object({ videoId: z.string() }))
+		.mutation(async ({ input, ctx }) => {
+			if (!ctx.user) throw new Error('Unauthorized');
+			const existing = await db
+				.select()
+				.from(youtubeWatched)
+				.where(
+					and(
+						eq(youtubeWatched.userId, ctx.user.id),
+						eq(youtubeWatched.videoId, input.videoId)
+					)
+				)
+				.limit(1)
+				.all();
+
+			if (existing.length) {
+				await db
+					.delete(youtubeWatched)
+					.where(
+						and(
+							eq(youtubeWatched.userId, ctx.user.id),
+							eq(youtubeWatched.videoId, input.videoId)
+						)
+					);
+				return { watched: false };
+			}
+
+			await db.insert(youtubeWatched).values({
+				userId: ctx.user.id,
+				videoId: input.videoId
+			});
+			return { watched: true };
+		})
 });
 
 export type YoutubeRouter = typeof youtubeRouter;

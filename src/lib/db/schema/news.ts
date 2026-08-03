@@ -1,9 +1,11 @@
 import { sqliteTable, integer, text, unique } from 'drizzle-orm/sqlite-core';
 
-export const newsRegions = sqliteTable('news_regions', {
+export const newsSources = sqliteTable('news_sources', {
 	id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
 	userId: text('user_id').notNull(),
-	region: text('region').notNull(),
+	name: text('name').notNull(),
+	url: text('url').notNull(),
+	active: integer('active', { mode: 'boolean' }).default(true),
 	order: integer('order').default(0)
 });
 
@@ -24,6 +26,7 @@ export const newsArticles = sqliteTable(
 		title: text('title').notNull(),
 		description: text('description'),
 		url: text('url').notNull(),
+		imageUrl: text('image_url'),
 		publishedAt: text('published_at'),
 		read: integer('read', { mode: 'boolean' }).default(false),
 		savedAt: integer('saved_at', { mode: 'timestamp' }).$defaultFn(() => new Date())

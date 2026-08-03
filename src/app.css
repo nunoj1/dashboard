@@ -49,4 +49,13 @@ html {
 	.link {
 		@apply text-indigo-400 transition hover:text-indigo-300;
 	}
+	.btn-text {
+		@apply text-sm font-medium text-zinc-400 transition hover:text-zinc-200;
+	}
+	.line-clamp-3 {
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
 }
