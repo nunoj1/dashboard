@@ -17,9 +17,11 @@
 		completed: boolean | null;
 	}
 
-	let { habits, month, onUpdate, onDelete } = $props<{
+	let { habits, month, week, viewMode, onUpdate, onDelete } = $props<{
 		habits: Habit[];
 		month: string;
+		week: number;
+		viewMode: 'monthly' | 'weekly';
 		onUpdate: () => void;
 		onDelete: (id: number) => void;
 	}>();
@@ -48,9 +50,25 @@
 		return new Date(year, monthNum, 0).getDate();
 	})());
 
-	let gridStyle = $derived(
-		`grid-template-columns: 110px repeat(${daysInMonth}, minmax(22px, 1fr))`
-	);
+	let weekDays = $derived((() => {
+		const [year, monthNum] = month.split('-').map(Number);
+		const startDay = (week - 1) * 7 + 1;
+		const endDay = Math.min(week * 7, daysInMonth);
+		const days = [];
+		for (let i = startDay; i <= endDay; i++) {
+			const date = new Date(year, monthNum - 1, i);
+			const today = new Date();
+			days.push({
+				day: i,
+				label: date.toLocaleDateString('en-US', { weekday: 'narrow' }),
+				isToday:
+					today.getFullYear() === year &&
+					today.getMonth() + 1 === monthNum &&
+					today.getDate() === i
+			});
+		}
+		return days;
+	})());
 
 	let dayLabels = $derived((() => {
 		const [year, monthNum] = month.split('-').map(Number);
@@ -69,6 +87,14 @@
 		}
 		return days;
 	})());
+
+	let visibleDays = $derived(viewMode === 'weekly' ? weekDays : dayLabels);
+
+	let gridStyle = $derived(
+		viewMode === 'weekly'
+			? `grid-template-columns: 110px repeat(${visibleDays.length}, minmax(32px, 1fr))`
+			: `grid-template-columns: 110px repeat(${visibleDays.length}, minmax(22px, 1fr))`
+	);
 
 	function getEntry(habitId: number, day: number): Entry | undefined {
 		const dateStr = `${month}-${String(day).padStart(2, '0')}`;
@@ -106,12 +132,12 @@
 	});
 </script>
 
-<div class="overflow-x-auto">
+<div class={viewMode === 'monthly' ? 'overflow-x-auto' : ''}>
 	<div class="min-w-full">
 		<!-- Header row -->
 		<div class="grid gap-px" style={gridStyle}>
 			<div class="text-[10px] font-medium text-zinc-600"></div>
-			{#each dayLabels as { day, label, isToday } (day)}
+			{#each visibleDays as { day, label, isToday } (day)}
 				<div class="flex flex-col items-center gap-px">
 					<span class="text-[9px] leading-3 text-zinc-600">{label}</span>
 					<span class="text-[10px] leading-3 {isToday ? 'font-bold text-indigo-400' : 'text-zinc-500'}"
@@ -146,7 +172,7 @@
 						✕
 					</button>
 				</div>
-				{#each dayLabels as { day } (day)}
+				{#each visibleDays as { day } (day)}
 					{@const entry = getEntry(habit.id, day)}
 					<button
 						onclick={() => toggle(habit.id, day)}
@@ -163,7 +189,7 @@
 
 {#if tooltip.show}
 	<div
-		class="fixed z-50 rounded-md bg-zinc-800 px-2 py-1 text-xs text-zinc-100 shadow-xl pointer-events-none border border-zinc-700"
+		class="pointer-events-none fixed z-50 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-100 shadow-xl"
 		style="left: {tooltip.x}px; top: {tooltip.y}px;"
 	>
 		{tooltip.text}

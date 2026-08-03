@@ -13,17 +13,34 @@
 		chart: number[];
 	}
 
+	const ranges = [
+		{ value: '1d' as const, label: '1D' },
+		{ value: '5d' as const, label: '5D' },
+		{ value: '1m' as const, label: '1M' },
+		{ value: '6m' as const, label: '6M' },
+		{ value: 'ytd' as const, label: 'YTD' },
+		{ value: '1y' as const, label: '1Y' },
+		{ value: '5y' as const, label: '5Y' },
+		{ value: 'all' as const, label: 'All' }
+	];
+
 	let tickers = $state<Ticker[]>([]);
 	let newSymbol = $state('');
 	let newName = $state('');
 	let loading = $state(false);
+	let selectedRange = $state<'1d' | '5d' | '1m' | '6m' | 'ytd' | '1y' | '5y' | 'all'>('1d');
 
 	onMount(loadTickers);
 
 	async function loadTickers() {
 		loading = true;
-		tickers = await trpc().stock.getAll.query();
+		tickers = await trpc().stock.getAll.query({ range: selectedRange });
 		loading = false;
+	}
+
+	function setRange(range: typeof selectedRange) {
+		selectedRange = range;
+		loadTickers();
 	}
 
 	async function addTicker(e: Event) {
@@ -72,6 +89,20 @@
 </script>
 
 <div class="space-y-3">
+	<div class="flex flex-wrap gap-1">
+		{#each ranges as r (r.value)}
+			<button
+				type="button"
+				onclick={() => setRange(r.value)}
+				class="rounded-md px-2 py-1 text-[11px] font-medium transition {selectedRange === r.value
+					? 'bg-indigo-500 text-white'
+					: 'text-zinc-500 hover:text-zinc-300'}"
+			>
+				{r.label}
+			</button>
+		{/each}
+	</div>
+
 	{#if tickers.length > 0}
 		<div class="max-h-[400px] space-y-2 overflow-y-auto pr-1">
 			{#each tickers as t (t.id)}
@@ -104,7 +135,7 @@
 
 					<div class="flex items-center justify-between gap-3">
 						{#if t.changePercent !== null}
-							<span class="text-xs font-semibold {changeColor(t.changePercent)} shrink-0">
+							<span class="shrink-0 text-xs font-semibold {changeColor(t.changePercent)}">
 								{t.changePercent >= 0 ? '+' : ''}{t.changePercent.toFixed(2)}%
 							</span>
 						{:else}
