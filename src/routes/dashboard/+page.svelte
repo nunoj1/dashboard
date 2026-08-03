@@ -140,8 +140,7 @@
 
 	<main class="p-6">
 		<div class="mx-auto grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-3">
-			<!-- Todo List: spans 2 columns -->
-			<div class="lg:col-span-2">
+			<div class="lg:col-span-2 min-w-0">
 				<Card title="To-Do List">
 					<TodoForm onsubmit={addTodo} />
 
@@ -244,12 +243,12 @@
 					{/if}
 				</Card>
 			</div>
-			<div>
+			<div class="min-w-0">
 				<Card title="Stocks">
 					<StockWidget />
 				</Card>
 			</div>
-			<div class="lg:col-span-3">
+			<div class="lg:col-span-3 min-w-0">
 				<Card title="Health Tracker">
 					<HealthWidget />
 				</Card>

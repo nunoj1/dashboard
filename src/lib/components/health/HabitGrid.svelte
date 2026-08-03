@@ -162,7 +162,7 @@
 	});
 </script>
 
-<div class="overflow-x-auto">
+<div class="min-w-0 overflow-x-auto">
 	<div class="min-w-full">
 		<!-- Header row -->
 		<div class="grid gap-px" style={gridStyle}>
