@@ -8,9 +8,7 @@
 	let inputRef: HTMLInputElement;
 
 	const filtered = $derived(
-		locations
-			.filter((l: string) => l.toLowerCase().includes(value.toLowerCase()))
-			.slice(0, 6)
+		locations.filter((l: string) => l.toLowerCase().includes(value.toLowerCase())).slice(0, 6)
 	);
 
 	function select(loc: string) {
@@ -19,7 +17,7 @@
 	}
 
 	function handleBlur() {
-		setTimeout(() => open = false, 200);
+		setTimeout(() => (open = false), 200);
 	}
 </script>
 
@@ -29,17 +27,19 @@
 		type="text"
 		bind:value
 		placeholder="Location or type new..."
-		onfocus={() => open = true}
+		onfocus={() => (open = true)}
 		onblur={handleBlur}
-		class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 text-sm"
+		class="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-indigo-500 focus:outline-none"
 	/>
 	{#if open && filtered.length > 0 && value}
-		<div class="absolute top-full left-0 right-0 mt-1 bg-zinc-900 border border-zinc-700 rounded-lg overflow-hidden z-20 shadow-xl max-h-40 overflow-y-auto">
+		<div
+			class="absolute top-full right-0 left-0 z-20 mt-1 max-h-40 overflow-hidden overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 shadow-xl"
+		>
 			{#each filtered as loc (loc)}
 				<button
 					type="button"
 					onclick={() => select(loc)}
-					class="w-full text-left px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 transition"
+					class="w-full px-3 py-2 text-left text-sm text-zinc-300 transition hover:bg-zinc-800"
 				>
 					{loc}
 				</button>

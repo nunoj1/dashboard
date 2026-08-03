@@ -134,10 +134,10 @@
 				<Card title="To-Do List">
 					<TodoForm onsubmit={addTodo} />
 
-					<div class="mt-6 mb-4 separator"></div>
+					<div class="separator mt-6 mb-4"></div>
 
 					<div class="mb-4 flex items-center justify-between">
-						<div class="flex gap-1 card-inner p-1">
+						<div class="card-inner flex gap-1 p-1">
 							<button
 								onclick={() => {
 									filter = 'active';
@@ -164,7 +164,7 @@
 
 					{#if filter === 'active'}
 						<div class="mb-4 flex items-center justify-between">
-							<div class="flex gap-1 card-inner p-1">
+							<div class="card-inner flex gap-1 p-1">
 								{#each [['none', 'None'], ['category', 'Category'], ['location', 'Location']] as [val, label] (val)}
 									<button
 										onclick={() => (activeGroupBy = val as 'none' | 'category' | 'location')}
@@ -188,7 +188,7 @@
 									loadHistory();
 								}}
 								placeholder="Search history..."
-								class="flex-1 input"
+								class="input flex-1"
 							/>
 						</div>
 					{/if}
@@ -204,7 +204,7 @@
 					/>
 
 					{#if filter === 'done' && totalPages > 1}
-						<div class="mt-6 flex items-center justify-between separator pt-4">
+						<div class="separator mt-6 flex items-center justify-between pt-4">
 							<span class="label">
 								Page {historyPage} of {totalPages} ({historyTotal} total)
 							</span>

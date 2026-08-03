@@ -184,7 +184,7 @@
 
 <div class="space-y-3">
 	<div class="flex flex-wrap items-center justify-between gap-2">
-		<div class="flex flex-wrap items-center gap-1 card-inner p-1">
+		<div class="card-inner flex flex-wrap items-center gap-1 p-1">
 			<button onclick={viewMode === 'weekly' ? prevWeek : prevMonth} class="btn-nav"> ← </button>
 			<span class="min-w-20 text-center text-sm font-medium text-zinc-300">
 				{currentMonth}

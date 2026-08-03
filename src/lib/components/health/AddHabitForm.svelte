@@ -41,9 +41,7 @@
 				color: newColor,
 				targetType: newTargetType,
 				targetCount:
-					newTargetType === 'weekly' || newTargetType === 'monthly'
-						? newTargetCount
-						: undefined
+					newTargetType === 'weekly' || newTargetType === 'monthly' ? newTargetCount : undefined
 			});
 			newName = '';
 			newColor = 'indigo';
@@ -82,7 +80,7 @@
 					{/each}
 				</select>
 				{#if showCountInput}
-					<div class="flex shrink-0 items-center gap-1 input px-2!">
+					<div class="input flex shrink-0 items-center gap-1 px-2!">
 						<input
 							type="number"
 							bind:value={newTargetCount}
@@ -98,7 +96,7 @@
 		</div>
 
 		<!-- Desktop layout -->
-		<div class="hidden sm:flex flex-col gap-2">
+		<div class="hidden flex-col gap-2 sm:flex">
 			<div class="flex items-center gap-2">
 				<input
 					type="text"
@@ -132,7 +130,7 @@
 				</select>
 
 				{#if showCountInput}
-					<div class="flex items-center gap-2 input">
+					<div class="input flex items-center gap-2">
 						<input
 							type="number"
 							bind:value={newTargetCount}

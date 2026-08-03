@@ -3,7 +3,7 @@ import { redirect } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const sessionToken = event.cookies.get('__session');
-	
+
 	// Phase 0: Simple cookie check. In Phase 1 we'll verify the JWT properly.
 	if (sessionToken) {
 		// For now, just mark as potentially authenticated.

@@ -100,13 +100,13 @@
 			placeholder="What needs doing?"
 			class="input flex-1 px-4 py-2.5"
 		/>
-		<button type="submit" class="w-full btn-primary sm:w-auto sm:shrink-0"> Add </button>
+		<button type="submit" class="btn-primary w-full sm:w-auto sm:shrink-0"> Add </button>
 	</div>
 
 	<button
 		type="button"
 		onclick={() => (advanced = !advanced)}
-		class="flex items-center gap-1 label transition hover:text-zinc-300"
+		class="label flex items-center gap-1 transition hover:text-zinc-300"
 	>
 		<svg
 			class="h-3 w-3 transition-transform {advanced ? 'rotate-90' : ''}"
@@ -120,19 +120,15 @@
 	</button>
 
 	{#if advanced}
-		<div class="space-y-4 card-inner p-4">
+		<div class="card-inner space-y-4 p-4">
 			<!-- Category & Location -->
 			<div class="grid grid-cols-2 gap-3">
 				<div>
-					<p class="mb-1.5 label">
-						Category
-					</p>
+					<p class="label mb-1.5">Category</p>
 					<CategoryInput bind:value={category} categories={allCategories} />
 				</div>
 				<div>
-					<p class="mb-1.5 label">
-						Location
-					</p>
+					<p class="label mb-1.5">Location</p>
 					<LocationInput bind:value={location} locations={allLocations} />
 				</div>
 			</div>
@@ -141,9 +137,7 @@
 			<div class="separator-light pt-4">
 				<p class=" mb-2 text-[10px] font-semibold text-zinc-500 uppercase">Type</p>
 				<div class=" mb-4 flex items-center justify-between">
-					<div
-						class="w-full flex items-center gap-1 card-inner p-1"
-					>
+					<div class="card-inner flex w-full items-center gap-1 p-1">
 						<button
 							type="button"
 							onclick={() => (mode = 'schedule')}
@@ -168,30 +162,17 @@
 
 			{#if mode === 'schedule'}
 				<div class="separator-light pt-4">
-					<p class="mb-1.5 label">Due</p>
+					<p class="label mb-1.5">Due</p>
 					<div class="flex gap-3">
-						<input
-							type="date"
-							bind:value={dueDate}
-							class="input scheme-dark"
-						/>
-						<input
-							type="time"
-							bind:value={dueTime}
-							class="input scheme-dark"
-						/>
+						<input type="date" bind:value={dueDate} class="input scheme-dark" />
+						<input type="time" bind:value={dueTime} class="input scheme-dark" />
 					</div>
 					<p class="mt-1.5 text-xs text-zinc-600">Priority auto-set by urgency.</p>
 				</div>
 			{:else}
 				<div class="separator-light pt-4">
-					<p class="mb-1.5 label">
-						Priority
-					</p>
-					<select
-						bind:value={priority}
-						class="input"
-					>
+					<p class="label mb-1.5">Priority</p>
+					<select bind:value={priority} class="input">
 						<option value="low">Low</option>
 						<option value="medium">Medium</option>
 						<option value="high">High</option>
@@ -200,15 +181,12 @@
 			{/if}
 
 			<div class="separator-light pt-4">
-				<p class="mb-1.5 label">
-					Description
-				</p>
+				<p class="label mb-1.5">Description</p>
 				<textarea
 					bind:value={description}
 					placeholder="Add details..."
 					rows="2"
-					class="w-full resize-none input px-4"
-				></textarea>
+					class="input w-full resize-none px-4"></textarea>
 			</div>
 
 			<div class="separator-light pt-4">
@@ -224,7 +202,7 @@
 								value={subtask}
 								oninput={(e) => updateSubtask(i, e.currentTarget.value)}
 								placeholder="Step {i + 1}"
-								class="flex-1 input py-1.5"
+								class="input flex-1 py-1.5"
 							/>
 							<button
 								type="button"
@@ -238,7 +216,7 @@
 					<button
 						type="button"
 						onclick={addSubtaskInput}
-						class="mt-1 flex items-center gap-1 text-xs link"
+						class="link mt-1 flex items-center gap-1 text-xs"
 					>
 						<svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path

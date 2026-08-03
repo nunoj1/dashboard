@@ -65,7 +65,7 @@ async function fetchYahooData(symbol: string, range: RangeKey) {
 		chart: valid.map((v) => v.price),
 		timestamps: valid.map((v) => v.time),
 		changePercent,
-		change,
+		change
 	};
 }
 

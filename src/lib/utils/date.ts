@@ -25,8 +25,11 @@ export function formatDueDate(date: Date | null): string {
 
 export function formatShortDate(date: Date | null): string {
 	if (!date) return '';
-	return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
-		' at ' + date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+	return (
+		date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+		' at ' +
+		date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+	);
 }
 
 export function isOverdue(date: Date | null, done: boolean): boolean {
@@ -70,12 +73,12 @@ export function urgencyLabel(u: Urgency): string {
 
 export function urgencyColor(u: Urgency): string {
 	return {
-		critical: 'text-red-400 bg-red-950/30 border-red-900/50',      // Overdue
-		high: 'text-purple-400 bg-purple-950/30 border-purple-900/50',   // High priority
+		critical: 'text-red-400 bg-red-950/30 border-red-900/50', // Overdue
+		high: 'text-purple-400 bg-purple-950/30 border-purple-900/50', // High priority
 		urgent: 'text-orange-400 bg-orange-950/30 border-orange-900/50', // < 24h
-		soon: 'text-amber-400 bg-amber-950/30 border-amber-900/50',     // < 72h
-		normal: 'text-sky-400 bg-sky-950/30 border-sky-900/50',           // Medium (babyblue)
-		low: 'text-zinc-400 bg-zinc-900/50 border-zinc-700',              // Low
+		soon: 'text-amber-400 bg-amber-950/30 border-amber-900/50', // < 72h
+		normal: 'text-sky-400 bg-sky-950/30 border-sky-900/50', // Medium (babyblue)
+		low: 'text-zinc-400 bg-zinc-900/50 border-zinc-700', // Low
 		done: 'text-emerald-400 bg-emerald-950/30 border-emerald-900/50' // Completed
 	}[u];
 }

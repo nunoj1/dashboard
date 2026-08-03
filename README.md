@@ -8,15 +8,15 @@ A curated dashboard running on your VM — YouTube subscriptions, news, stocks, 
 
 ## Tech Stack
 
-| Layer | Choice |
-|-------|--------|
-| Framework | [SvelteKit](https://svelte.dev) |
-| API | [tRPC](https://trpc.io) + [Zod](https://zod.dev) |
-| Database | SQLite via [Drizzle ORM](https://orm.drizzle.team) + `@libsql/client` |
-| Auth | [Clerk](https://clerk.com) (Google OAuth) |
-| Styling | [Tailwind CSS](https://tailwindcss.com) v4 |
-| Icons | [Lucide](https://lucide.dev) |
-| AI | Rule-based insights (v1), optional LLM via Ollama (v2) |
+| Layer     | Choice                                                                |
+| --------- | --------------------------------------------------------------------- |
+| Framework | [SvelteKit](https://svelte.dev)                                       |
+| API       | [tRPC](https://trpc.io) + [Zod](https://zod.dev)                    |
+| Database  | SQLite via [Drizzle ORM](https://orm.drizzle.team) + `@libsql/client` |
+| Auth      | [Clerk](https://clerk.com) (Google OAuth)                             |
+| Styling   | [Tailwind CSS](https://tailwindcss.com) v4                             |
+| Icons     | [Lucide](https://lucide.dev)                                          |
+| AI        | Rule-based insights (v1), optional LLM via Ollama (v2)                |
 
 ---
 
@@ -50,31 +50,20 @@ pnpm db:migrate
 
 # 5. Run
 pnpm dev
-```
-
-Open `http://localhost:5173` and sign in with Google.
-
----
-
-## Build for Production
-
-```bash
+Open http://localhost:5173 and sign in with Google.
+Build for Production
+bash
 pnpm build
 node build
-```
-
 Or use Docker / systemd on your VM.
-
----
-
-## Architecture
-
-```
+Architecture
+plain
 src/
 ├── lib/
 │   ├── components/        # Reusable UI components
 │   │   ├── layout/
 │   │   ├── todos/
+│   │   ├── health/
 │   │   ├── stocks/
 │   │   └── ui/
 │   ├── db/
@@ -82,6 +71,7 @@ src/
 │   │   │   ├── index.ts
 │   │   │   ├── todos.ts
 │   │   │   ├── stocks.ts
+│   │   │   ├── health.ts
 │   │   │   └── users.ts
 │   │   └── index.ts         # DB connection
 │   ├── server/              # Server-only utilities
@@ -96,6 +86,7 @@ src/
 │   │       │   ├── location.ts
 │   │       │   └── subtask.ts
 │   │       ├── stock.ts
+│   │       ├── health.ts
 │   │       └── todo.ts
 │   └── utils/
 │       └── date.ts
@@ -109,12 +100,32 @@ src/
 
 ---
 
+## Component Design System
+```
+All shared styles live in src/app.css as Tailwind @layer components:
+Table
+| Class                                         | Use                                                       |
+| --------------------------------------------- | --------------------------------------------------------- |
+| `.btn-primary`                                | Main CTAs (Add Habit, Add Todo, Add Stock, Modal Confirm) |
+| `.btn-nav`                                    | Pagination, arrows, Today button                          |
+| `.btn-toggle-active` / `.btn-toggle-inactive` | Tab switches, view toggles, range selectors               |
+| `.btn-text`                                   | Modal cancel, subtask remove, destructive actions         |
+| `.input`                                      | All text inputs, selects, textareas                       |
+| `.card-inner`                                 | Nested cards inside widgets (add forms, filter bars)      |
+| `.separator`                                  | Section dividers                                          |
+| `.label`                                      | Form labels, uppercase micro-copy                         |
+| `.badge` / `.badge-muted`                     | Category/location tags                                    |
+| `.link`                                       | Text links (Add subtask, etc.)                            |
+```
+
+---
+
 ## Build Checklist
 
 ### ✅ Phase 0: Bootstrap
 - [x] SvelteKit + TypeScript scaffold
 - [x] Tailwind CSS v4 (dark mode only)
-- [x] Drizzle ORM + SQLite (`@libsql/client`)
+- [x] Drizzle ORM + SQLite (@libsql/client)
 - [x] Clerk auth with Google OAuth
 - [x] Dark theme across all Clerk components
 - [x] Landing page + protected dashboard shell
@@ -123,23 +134,23 @@ src/
 ### ✅ Phase 1: tRPC + Data Layer
 - [x] tRPC router with superjson transformer
 - [x] SQLite database connection via Drizzle
-- [x] Schema split by domain (`users.ts`, `todos.ts`, `stocks.ts`)
-- [x] API route at `/api/trpc/[...trpc]`
+- [x] Schema split by domain (users.ts, todos.ts, stocks.ts, health.ts)
+- [x] API route at /api/trpc/[...trpc]
 - [x] Client-side tRPC hook
-- [x] Router split by feature (`todo/`, `stock.ts`)
+- [x] Router split by feature (todo/, stock.ts, health.ts)
 
 ### ✅ Phase 2: To-Do List (Expanded)
 - [x] Create / toggle / delete tasks
-- [x] **Subtasks** with progress bar and individual checkboxes
-- [x] **Due dates** with split date/time inputs
-- [x] **Urgency scoring**: Critical → High → Urgent → Soon → Normal → Low
-- [x] **Priority mode** vs **Schedule mode** (mutually exclusive)
-- [x] **Categories** with autofill input (creates new if not exists)
-- [x] **Locations** with autofill input (creates new if not exists)
-- [x] **Active grouping** toggle: None / Category / Location
-- [x] **History** tab with server-side pagination
-- [x] **History search** by title
-- [x] **Confirmation modal** before marking done
+- [x] Subtasks with progress bar and individual checkboxes
+- [x] Due dates with split date/time inputs
+- [x] Urgency scoring: Critical → High → Urgent → Soon → Normal → Low
+- [x] Priority mode vs Schedule mode (mutually exclusive)
+- [x] Categories with autofill input (creates new if not exists)
+- [x] Locations with autofill input (creates new if not exists)
+- [x] Active grouping toggle: None / Category / Location
+- [x] History tab with server-side pagination
+- [x] History search by title
+- [x] Confirmation modal before marking done
 - [x] Subtask warning in modal when unfinished subtasks exist
 - [x] Date metadata: Due, Created, Completed
 
@@ -147,13 +158,20 @@ src/
 - [x] Yahoo Finance API integration (no key required)
 - [x] Live price + change % + sparkline chart
 - [x] Configurable tickers (add/remove)
+- [x] Time range selector (1D / 5D / 1M / 6M / YTD / 1Y / 5Y / All)
+- [x] Interactive chart hover with crosshair + price tooltip
 - [x] Mini stock widget in bento layout
 
-### ⏳ Phase 4: Health Tracker
-- [ ] Monthly habit grid
-- [ ] Checkboxes per day (exercise, read, meditate, etc.)
-- [ ] Streak counters
-- [ ] Dashboard with stats over time, with filters by time periods
+### ✅ Phase 4: Health Tracker
+- [x] Monthly habit grid (31-day view)
+- [x] Weekly habit grid (Mon–Sun, 7-day view)
+- [x] Responsive: monthly on desktop, weekly on mobile
+- [x] Checkboxes per day with color-coded habits
+- [x] Streak counters (current + longest)
+- [x] Target system: Daily / Weekly / Monthly / None
+- [x] Below-target warning banner
+- [x] Today button for quick navigation
+- [x] Delete habit with confirmation modal
 
 ### ⏳ Phase 5: YouTube Feed
 - [ ] YouTube Data API integration
@@ -198,9 +216,16 @@ src/
 
 - **Dark mode only.** No light mode toggle. `html` has `class="dark"` and `color-scheme: dark`.
 - **Neutral palette.** `zinc` grays to match Clerk's dark theme.
-- **Accent:** `indigo-500` for CTAs. Urgency colors: red → purple → orange → amber → sky → zinc.
+- **Accent system:**
+    - Primary CTA: violet (Add buttons, Confirm)
+    - Navigation: purple family (arrows, pagination, Today)
+    - Toggles: violet family at lower intensity (Monthly/Weekly, Active/History, range selectors)
+    - Habit checkboxes: indigo/emerald/sky/amber/rose/violet per habit
+    - Urgency: red → purple → orange → amber → sky → zinc
+    
 - **Layout:** Bento-box grid. Cards with rounded corners, subtle borders, soft shadows.
 - **Code organization:** Components, tRPC routers, and DB schemas all split by feature/domain.
+- **CSS architecture:** All recurring UI patterns abstracted into app.css component classes. No raw Tailwind duplication for buttons, inputs, badges, or separators.
 
 ---
 

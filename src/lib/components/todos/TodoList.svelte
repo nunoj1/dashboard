@@ -69,7 +69,7 @@
 					const groups: Record<string, Todo[]> = {};
 					for (const t of todos) {
 						const key =
-							groupBy === 'location' ? (t.location || 'No location') : (t.category || 'Uncategorized');
+							groupBy === 'location' ? t.location || 'No location' : t.category || 'Uncategorized';
 						if (!groups[key]) groups[key] = [];
 						groups[key].push(t);
 					}
@@ -85,19 +85,15 @@
 {#if grouped && grouped.length > 0}
 	{#each grouped as [group, items] (group)}
 		<div class="mb-5">
-			<h3 class="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+			<h3
+				class="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wider text-zinc-500 uppercase"
+			>
 				<span class="h-1.5 w-1.5 rounded-full bg-zinc-600"></span>
 				{group}
 			</h3>
 			<div class="space-y-2">
 				{#each items as todo (todo.id)}
-					<TodoItem
-						{todo}
-						{ontoggle}
-						{onconfirmDone}
-						{onsubtaskToggle}
-						{alwaysExpanded}
-					/>
+					<TodoItem {todo} {ontoggle} {onconfirmDone} {onsubtaskToggle} {alwaysExpanded} />
 				{/each}
 			</div>
 		</div>
@@ -105,13 +101,7 @@
 {:else if todos.length > 0}
 	<div class="space-y-2">
 		{#each displayItems as todo (todo.id)}
-			<TodoItem
-				{todo}
-				{ontoggle}
-				{onconfirmDone}
-				{onsubtaskToggle}
-				{alwaysExpanded}
-			/>
+			<TodoItem {todo} {ontoggle} {onconfirmDone} {onsubtaskToggle} {alwaysExpanded} />
 		{/each}
 	</div>
 {:else}

@@ -18,12 +18,7 @@
 	<Show when="signed-in">
 		<div class="text-center">
 			<p class="mb-4 text-zinc-400">You're signed in.</p>
-			<a
-				href={resolve('/dashboard')}
-				class="inline-block btn-primary"
-			>
-				Go to Dashboard
-			</a>
+			<a href={resolve('/dashboard')} class="btn-primary inline-block"> Go to Dashboard </a>
 		</div>
 	</Show>
 </div>

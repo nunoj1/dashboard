@@ -39,7 +39,7 @@
 	}>();
 
 	let expanded = $derived(alwaysExpanded);
-	
+
 	const urgency: Urgency = $derived(
 		getUrgency(todo.dueDate, !!todo.done, todo.priority ?? 'medium')
 	);

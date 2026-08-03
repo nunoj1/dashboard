@@ -4,6 +4,10 @@
 	let { urgency } = $props<{ urgency: Urgency }>();
 </script>
 
-<span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border {urgencyColor(urgency)}">
+<span
+	class="rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase {urgencyColor(
+		urgency
+	)}"
+>
 	{urgencyLabel(urgency)}
 </span>

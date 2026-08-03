@@ -14,14 +14,20 @@ export const locationRouter = t.router({
 		.input(z.object({ name: z.string().min(1) }))
 		.mutation(async ({ input, ctx }) => {
 			if (!ctx.user) throw new Error('Unauthorized');
-			const existing = await db.select().from(todoLocations)
-				.where(eq(todoLocations.name, input.name)).get();
+			const existing = await db
+				.select()
+				.from(todoLocations)
+				.where(eq(todoLocations.name, input.name))
+				.get();
 			if (existing) return existing;
 
-			const [loc] = await db.insert(todoLocations).values({
-				userId: ctx.user.id,
-				name: input.name
-			}).returning();
+			const [loc] = await db
+				.insert(todoLocations)
+				.values({
+					userId: ctx.user.id,
+					name: input.name
+				})
+				.returning();
 			return loc;
 		})
 });

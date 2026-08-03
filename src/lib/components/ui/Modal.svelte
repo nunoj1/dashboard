@@ -19,8 +19,10 @@
 			onkeydown={(e) => e.key === 'Enter' && oncancel()}
 			aria-label="Close modal"
 		></div>
-		<div class="relative bg-zinc-900 border border-zinc-700 rounded-xl p-6 w-full max-w-sm shadow-2xl">
-			<h3 class="text-lg font-semibold text-zinc-100 mb-2">{title}</h3>
+		<div
+			class="relative w-full max-w-sm rounded-xl border border-zinc-700 bg-zinc-900 p-6 shadow-2xl"
+		>
+			<h3 class="mb-2 text-lg font-semibold text-zinc-100">{title}</h3>
 
 			{#if children}
 				<div class="mb-4">
@@ -28,21 +30,13 @@
 				</div>
 			{/if}
 
-			<p class="text-sm text-zinc-400 mb-6">{message}</p>
+			<p class="mb-6 text-sm text-zinc-400">{message}</p>
 
-			<div class="flex gap-3 justify-end">
-				<button
-					type="button"
-					onclick={oncancel}
-					class="px-4 py-2 btn-toggle-inactive"
-				>
+			<div class="flex justify-end gap-3">
+				<button type="button" onclick={oncancel} class="btn-toggle-inactive px-4 py-2">
 					Cancel
 				</button>
-				<button
-					type="button"
-					onclick={onconfirm}
-					class="px-4 py-2 btn-primary transition"
-				>
+				<button type="button" onclick={onconfirm} class="btn-primary px-4 py-2 transition">
 					Confirm
 				</button>
 			</div>

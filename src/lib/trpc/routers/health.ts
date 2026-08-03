@@ -57,7 +57,11 @@ function countLastNDays(entries: HabitEntry[], n: number) {
 	return count;
 }
 
-function getTargetStatus(entries: HabitEntry[], targetType: string | null, targetCount: number | null) {
+function getTargetStatus(
+	entries: HabitEntry[],
+	targetType: string | null,
+	targetCount: number | null
+) {
 	const completed = entries.filter((e) => e.completed === true);
 	const now = new Date();
 
@@ -144,9 +148,8 @@ export const healthRouter = t.router({
 					name: input.name,
 					color: input.color,
 					targetType: input.targetType,
-					targetCount: input.targetType === 'none' || input.targetType === 'daily' 
-						? null 
-						: input.targetCount
+					targetCount:
+						input.targetType === 'none' || input.targetType === 'daily' ? null : input.targetCount
 				})
 				.returning();
 			return habit;
@@ -182,14 +185,12 @@ export const healthRouter = t.router({
 			}
 		}),
 
-	deleteHabit: t.procedure
-		.input(z.object({ id: z.number() }))
-		.mutation(async ({ input, ctx }) => {
-			if (!ctx.user) throw new Error('Unauthorized');
-			await db.delete(habitEntries).where(eq(habitEntries.habitId, input.id));
-			await db.delete(habits).where(eq(habits.id, input.id));
-			return { id: input.id };
-		}),
+	deleteHabit: t.procedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
+		if (!ctx.user) throw new Error('Unauthorized');
+		await db.delete(habitEntries).where(eq(habitEntries.habitId, input.id));
+		await db.delete(habits).where(eq(habits.id, input.id));
+		return { id: input.id };
+	}),
 
 	getStats: t.procedure
 		.input(z.object({ period: z.enum(['7d', '30d', '90d', '1y']).default('30d') }))
