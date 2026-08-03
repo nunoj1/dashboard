@@ -51,11 +51,11 @@ pnpm db:migrate
 # 5. Run
 pnpm dev
 Open http://localhost:5173 and sign in with Google.
-Build for Production
-bash
+
+# 6. Build for Production
 pnpm build
 node build
-Or use Docker / systemd on your VM.
+# Or use Docker / systemd on your VM.
 ```
 
 ---
