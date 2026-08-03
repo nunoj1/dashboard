@@ -200,6 +200,8 @@
 								<svg
 									viewBox="0 0 120 32"
 									class="h-8 w-full cursor-crosshair {changeBg(t.changePercent)}"
+									role="img"
+									aria-label="Price chart for {t.symbol}"
 									fill="none"
 									stroke-width="2"
 									stroke-linecap="round"
@@ -257,7 +259,7 @@
 		<p class="py-6 text-center text-sm text-zinc-600">No tickers yet. Add one below.</p>
 	{/if}
 
-	<form onsubmit={addTicker} class="flex flex-col gap-2 separator pt-3">
+	<form onsubmit={addTicker} class="separator flex flex-col gap-2 pt-3">
 		<div class="flex gap-2">
 			<input
 				type="text"

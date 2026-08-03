@@ -57,50 +57,57 @@
 
 	let daysInMonth = $derived(new Date(year, monthNum, 0).getDate());
 
-	let monthDays = $derived(((): VisibleDay[] => {
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-		const days: VisibleDay[] = [];
-		for (let i = 1; i <= daysInMonth; i++) {
-			const date = new Date(year, monthNum - 1, i);
-			const dateStr = `${year}-${String(monthNum).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-			days.push({
-				dateStr,
-				day: i,
-				label: date.toLocaleDateString('en-US', { weekday: 'narrow' }),
-				isToday: date.getTime() === today.getTime(),
-				isCurrentMonth: true
-			});
-		}
-		return days;
-	})());
+	let monthDays = $derived(
+		((): VisibleDay[] => {
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity
+			const today = new Date();
+			today.setHours(0, 0, 0, 0);
+			const days: VisibleDay[] = [];
+			for (let i = 1; i <= daysInMonth; i++) {
+				const date = new Date(year, monthNum - 1, i);
+				const dateStr = `${year}-${String(monthNum).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+				days.push({
+					dateStr,
+					day: i,
+					label: date.toLocaleDateString('en-US', { weekday: 'narrow' }),
+					isToday: date.getTime() === today.getTime(),
+					isCurrentMonth: true
+				});
+			}
+			return days;
+		})()
+	);
 
-	let weekDays = $derived(((): VisibleDay[] => {
-		const firstOfMonth = new Date(year, monthNum - 1, 1);
-		const firstDayOfWeek = firstOfMonth.getDay();
-		const daysFromMonday = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
-		const firstMonday = new Date(year, monthNum - 1, 1 - daysFromMonday);
-		const targetMonday = new Date(firstMonday);
-		targetMonday.setDate(firstMonday.getDate() + (week - 1) * 7);
+	let weekDays = $derived(
+		((): VisibleDay[] => {
+			const firstOfMonth = new Date(year, monthNum - 1, 1);
+			const firstDayOfWeek = firstOfMonth.getDay();
+			const daysFromMonday = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+			const firstMonday = new Date(year, monthNum - 1, 1 - daysFromMonday);
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity
+			const targetMonday = new Date(firstMonday);
+			targetMonday.setDate(firstMonday.getDate() + (week - 1) * 7);
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity
+			const today = new Date();
+			today.setHours(0, 0, 0, 0);
 
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-
-		const days: VisibleDay[] = [];
-		for (let i = 0; i < 7; i++) {
-			const date = new Date(targetMonday);
-			date.setDate(targetMonday.getDate() + i);
-			const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-			days.push({
-				dateStr,
-				day: date.getDate(),
-				label: date.toLocaleDateString('en-US', { weekday: 'narrow' }),
-				isToday: date.getTime() === today.getTime(),
-				isCurrentMonth: date.getMonth() + 1 === monthNum && date.getFullYear() === year
-			});
-		}
-		return days;
-	})());
+			const days: VisibleDay[] = [];
+			for (let i = 0; i < 7; i++) {
+				// eslint-disable-next-line svelte/prefer-svelte-reactivity
+				const date = new Date(targetMonday);
+				date.setDate(targetMonday.getDate() + i);
+				const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+				days.push({
+					dateStr,
+					day: date.getDate(),
+					label: date.toLocaleDateString('en-US', { weekday: 'narrow' }),
+					isToday: date.getTime() === today.getTime(),
+					isCurrentMonth: date.getMonth() + 1 === monthNum && date.getFullYear() === year
+				});
+			}
+			return days;
+		})()
+	);
 
 	let visibleDays = $derived(viewMode === 'weekly' ? weekDays : monthDays);
 
@@ -126,7 +133,7 @@
 		const currentMonth = month;
 		const currentViewMode = viewMode;
 		const currentWeekDays = currentViewMode === 'weekly' ? weekDays : [];
-
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		const monthsToLoad = new Set<string>();
 		monthsToLoad.add(currentMonth);
 
@@ -186,19 +193,21 @@
 		<!-- Habit rows -->
 		{#each habits as habit (habit.id)}
 			<div class="group grid gap-px py-px transition hover:bg-zinc-800/30" style={gridStyle}>
-				<div class="flex min-w-0 items-center justify-between overflow-hidden pr-1 cursor-default">
-					<span
-						class="truncate text-[10px] font-medium leading-tight text-zinc-300"
-						onmouseenter={(e) => showTip(e, habit.name)}
-						onmousemove={moveTip}
-						onmouseleave={hideTip}
-					>
+				<div
+					class="flex min-w-0 cursor-default items-center justify-between overflow-hidden pr-1"
+					role="contentinfo"
+					aria-label={habit.name}
+					onmouseenter={(e) => showTip(e, habit.name)}
+					onmousemove={moveTip}
+					onmouseleave={hideTip}
+				>
+					<span class="truncate text-[10px] leading-tight font-medium text-zinc-300">
 						{habit.name}
 					</span>
 					<button
 						type="button"
 						onclick={() => onDelete(habit.id)}
-						class="px-1 text-[10px] text-zinc-600 opacity-0 transition hover:text-red-400 group-hover:opacity-100"
+						class="px-1 text-[10px] text-zinc-600 opacity-0 transition group-hover:opacity-100 hover:text-red-400"
 						aria-label="Delete {habit.name}"
 						title="Delete habit"
 					>
@@ -209,7 +218,7 @@
 					{@const entry = getEntry(habit.id, d.dateStr)}
 					<button
 						onclick={() => toggle(habit.id, d.dateStr)}
-						class="min-h-[20px] w-full rounded-sm border transition {entry?.completed
+						class="min-h-5 w-full rounded-sm border transition {entry?.completed
 							? colorMap[habit.color ?? 'indigo'] || colorMap.indigo
 							: 'border-zinc-800/60 bg-zinc-900/40 hover:border-zinc-700'}"
 						aria-label="{habit.name} on {d.dateStr}"

@@ -122,16 +122,6 @@
 		historyTodos = historyTodos.map(update);
 	}
 
-	async function subtaskDelete(id: number) {
-		await trpc().subtask.delete.mutate({ id });
-		const update = (t: Todo) => ({
-			...t,
-			subtasks: t.subtasks.filter((s) => s.id !== id)
-		});
-		activeTodos = activeTodos.map(update);
-		historyTodos = historyTodos.map(update);
-	}
-
 	const totalPages = $derived(Math.ceil(historyTotal / historyLimit));
 </script>
 

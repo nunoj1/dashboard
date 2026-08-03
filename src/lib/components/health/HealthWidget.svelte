@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AddHabitForm from './AddHabitForm.svelte';
 	import { trpc } from '$lib/trpc/client';
 	import { onMount } from 'svelte';
 	import HabitGrid from './HabitGrid.svelte';
@@ -66,30 +67,10 @@
 	// Default to weekly so server render is safe (no wide grid overflow on mobile)
 	let viewMode = $state<'monthly' | 'weekly'>('weekly');
 
-	let newName = $state('');
-	let newColor = $state<'indigo' | 'emerald' | 'sky' | 'amber' | 'rose' | 'violet'>('indigo');
-	let newTargetType = $state<'daily' | 'weekly' | 'monthly' | 'none'>('none');
-	let newTargetCount = $state(3);
 	let loading = $state(false);
 	let error = $state('');
 
 	let deletingHabitId = $state<number | null>(null);
-
-	const colorOptions = [
-		{ value: 'indigo' as const, class: 'bg-indigo-500' },
-		{ value: 'emerald' as const, class: 'bg-emerald-500' },
-		{ value: 'sky' as const, class: 'bg-sky-500' },
-		{ value: 'amber' as const, class: 'bg-amber-500' },
-		{ value: 'rose' as const, class: 'bg-rose-500' },
-		{ value: 'violet' as const, class: 'bg-violet-500' }
-	];
-
-	const targetTypes = [
-		{ value: 'none' as const, label: 'None' },
-		{ value: 'daily' as const, label: 'Daily' },
-		{ value: 'weekly' as const, label: 'Weekly' },
-		{ value: 'monthly' as const, label: 'Monthly' }
-	];
 
 	onMount(() => {
 		const mql = window.matchMedia('(max-width: 640px)');
@@ -173,28 +154,6 @@
 		}
 	}
 
-	async function addHabit(e: Event) {
-		e.preventDefault();
-		if (!newName.trim()) return;
-		error = '';
-		try {
-			await trpc().health.createHabit.mutate({
-				name: newName.trim(),
-				color: newColor,
-				targetType: newTargetType,
-				targetCount:
-					newTargetType === 'weekly' || newTargetType === 'monthly' ? newTargetCount : undefined
-			});
-			newName = '';
-			newColor = 'indigo';
-			newTargetType = 'none';
-			newTargetCount = 3;
-			await loadHabits();
-		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to add habit';
-		}
-	}
-
 	function handleDeleteRequest(id: number) {
 		const habit = habits.find((h) => h.id === id);
 		if (!habit) return;
@@ -221,15 +180,13 @@
 			(h) => h.targetStatus.expected > 0 && h.targetStatus.actual < h.targetStatus.expected
 		)
 	);
-
-	let showCountInput = $derived(newTargetType === 'weekly' || newTargetType === 'monthly');
 </script>
 
 <div class="space-y-3">
 	<div class="flex flex-wrap items-center justify-between gap-2">
 		<div class="flex flex-wrap items-center gap-1 card-inner p-1">
 			<button onclick={viewMode === 'weekly' ? prevWeek : prevMonth} class="btn-nav"> ← </button>
-			<span class="min-w-[80px] text-center text-sm font-medium text-zinc-300">
+			<span class="min-w-20 text-center text-sm font-medium text-zinc-300">
 				{currentMonth}
 			</span>
 			<button onclick={viewMode === 'weekly' ? nextWeek : nextMonth} class="btn-nav"> → </button>
@@ -287,113 +244,7 @@
 	{/if}
 
 	<!-- Sub-container for add habit form -->
-	<div class="card-inner p-3">
-		<form onsubmit={addHabit} class="flex flex-col gap-2">
-			<!-- Mobile layout -->
-			<div class="flex flex-col gap-2 sm:hidden">
-				<div class="flex items-center gap-2">
-					<input
-						type="text"
-						bind:value={newName}
-						placeholder="New habit (e.g. Exercise, Read, Meditate)"
-						class="min-w-0 flex-1 input"
-					/>
-					<select
-						bind:value={newColor}
-						class="w-auto shrink-0 input"
-					>
-						{#each colorOptions as c (c.value)}
-							<option value={c.value}>{c.value}</option>
-						{/each}
-					</select>
-				</div>
-				<div class="separator"></div>
-				<div class="flex items-center gap-2">
-					<span class="label shrink-0">Target</span>
-					<select
-						bind:value={newTargetType}
-						class="min-w-0 flex-1 input"
-					>
-						{#each targetTypes as tt (tt.value)}
-							<option value={tt.value}>{tt.label}</option>
-						{/each}
-					</select>
-					{#if showCountInput}
-						<div
-							class="flex shrink-0 items-center gap-1 rounded-lg border border-zinc-800 bg-zinc-950 px-2 py-2"
-						>
-							<input
-								type="number"
-								bind:value={newTargetCount}
-								min="1"
-								class="w-8 bg-transparent text-right text-sm text-zinc-100 focus:outline-none"
-							/>
-							<span class="text-[10px] text-zinc-500">
-								{newTargetType === 'weekly' ? '/wk' : '/mo'}
-							</span>
-						</div>
-					{/if}
-				</div>
-			</div>
-
-			<!-- Desktop layout -->
-			<div class="hidden flex-col gap-2 sm:flex">
-				<div class="flex items-center gap-2">
-					<input
-						type="text"
-						bind:value={newName}
-						placeholder="New habit (e.g. Exercise, Read, Meditate)"
-						class="min-w-0 flex-1 input"
-					/>
-					<div class="flex shrink-0 gap-1">
-						{#each colorOptions as c (c.value)}
-							<button
-								type="button"
-								onclick={() => (newColor = c.value)}
-								class="h-6 w-6 rounded-full border-2 transition {newColor === c.value
-									? 'border-white ' + c.class
-									: 'border-transparent ' + c.class + ' opacity-60 hover:opacity-100'}"
-								aria-label="Select {c.value}"
-								title={c.value}
-							></button>
-						{/each}
-					</div>
-				</div>
-
-				<div class="separator"></div>
-
-				<div class="flex items-center gap-2">
-					<span class="label shrink-0">Target</span>
-					<select
-						bind:value={newTargetType}
-						class="w-auto input"
-					>
-						{#each targetTypes as tt (tt.value)}
-							<option value={tt.value}>{tt.label}</option>
-						{/each}
-					</select>
-
-					{#if showCountInput}
-						<div
-							class="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2"
-						>
-							<input
-								type="number"
-								bind:value={newTargetCount}
-								min="1"
-								class="w-12 bg-transparent text-right text-sm text-zinc-100 focus:outline-none"
-							/>
-							<span class="label">
-								{newTargetType === 'weekly' ? '× / week' : '× / month'}
-							</span>
-						</div>
-					{/if}
-				</div>
-			</div>
-
-			<button type="submit" class="w-full btn-primary"> Add Habit </button>
-		</form>
-	</div>
+	<AddHabitForm onAdd={loadHabits} />
 
 	{#if loading}
 		<p class="text-center text-xs text-zinc-600">Updating…</p>
