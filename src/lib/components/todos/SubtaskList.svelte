@@ -24,7 +24,7 @@
 			<div class="h-1 flex-1 bg-zinc-800 rounded-full overflow-hidden">
 				<div class="h-full bg-indigo-500 rounded-full transition-all" style="width: {(completedCount / total) * 100}%"></div>
 			</div>
-			<span class="text-xs text-zinc-500">{completedCount}/{total}</span>
+			<span class="label">{completedCount}/{total}</span>
 		</div>
 	{/if}
 

@@ -183,9 +183,7 @@
 				color: newColor,
 				targetType: newTargetType,
 				targetCount:
-					newTargetType === 'weekly' || newTargetType === 'monthly'
-						? newTargetCount
-						: undefined
+					newTargetType === 'weekly' || newTargetType === 'monthly' ? newTargetCount : undefined
 			});
 			newName = '';
 			newColor = 'indigo';
@@ -229,33 +227,16 @@
 
 <div class="space-y-3">
 	<div class="flex flex-wrap items-center justify-between gap-2">
-		<div class="mb-4 flex items-center justify-between">
-		<div class="flex items-center gap-1 rounded-lg border border-zinc-800/50 bg-zinc-950/50 p-1">
-			<button
-				onclick={viewMode === 'weekly' ? prevWeek : prevMonth}
-				class="btn-nav"
-			>
-				←
-			</button>
+		<div class="flex items-center gap-1 card-inner p-1">
+			<button onclick={viewMode === 'weekly' ? prevWeek : prevMonth} class="btn-nav"> ← </button>
 			<span class="min-w-[80px] text-center text-sm font-medium text-zinc-300">
 				{currentMonth}
 			</span>
-			<button
-				onclick={viewMode === 'weekly' ? nextWeek : nextMonth}
-				class="btn-nav"
-			>
-				→
-			</button>
-			<button
-				onclick={goToday}
-				class="btn-nav"
-			>
-				Today
-			</button>
-		</div>
+			<button onclick={viewMode === 'weekly' ? nextWeek : nextMonth} class="btn-nav"> → </button>
+			<button onclick={goToday} class="btn-nav"> Today </button>
 		</div>
 
-		<div class="hidden gap-1 rounded-lg border border-zinc-800 bg-zinc-950 p-1 sm:flex">
+		<div class="hidden flex-wrap gap-1 rounded-lg border border-zinc-800 bg-zinc-950 p-1 sm:flex">
 			<button
 				type="button"
 				onclick={() => setViewMode('monthly')}
@@ -294,7 +275,8 @@
 					{#each belowTarget as h, i (h.id)}
 						<span class="text-zinc-300">{h.name}</span>
 						<span class="text-zinc-500">
-							({h.targetStatus.actual}/{h.targetStatus.expected} {h.targetStatus.label})
+							({h.targetStatus.actual}/{h.targetStatus.expected}
+							{h.targetStatus.label})
 						</span>{i < belowTarget.length - 1 ? ', ' : ''}
 					{/each}
 				</p>
@@ -305,7 +287,7 @@
 	{/if}
 
 	<!-- Sub-container for add habit form -->
-	<div class="rounded-lg border border-zinc-800/50 bg-zinc-950/50 p-3">
+	<div class="card-inner p-3">
 		<form onsubmit={addHabit} class="flex flex-col gap-2">
 			<!-- Mobile layout -->
 			<div class="flex flex-col gap-2 sm:hidden">
@@ -314,30 +296,32 @@
 						type="text"
 						bind:value={newName}
 						placeholder="New habit (e.g. Exercise, Read, Meditate)"
-						class="min-w-0 flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-indigo-500 focus:outline-none"
+						class="min-w-0 flex-1 input"
 					/>
 					<select
 						bind:value={newColor}
-						class="w-auto shrink-0 rounded-lg border border-zinc-800 bg-zinc-950 px-2 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
+						class="w-auto shrink-0 input"
 					>
 						{#each colorOptions as c (c.value)}
 							<option value={c.value}>{c.value}</option>
 						{/each}
 					</select>
 				</div>
-				<div class="h-px bg-zinc-800/50"></div>
+				<div class="separator"></div>
 				<div class="flex items-center gap-2">
-					<span class="shrink-0 text-xs text-zinc-500">Target</span>
+					<span class="label shrink-0">Target</span>
 					<select
 						bind:value={newTargetType}
-						class="min-w-0 flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
+						class="min-w-0 flex-1 input"
 					>
 						{#each targetTypes as tt (tt.value)}
 							<option value={tt.value}>{tt.label}</option>
 						{/each}
 					</select>
 					{#if showCountInput}
-						<div class="flex shrink-0 items-center gap-1 rounded-lg border border-zinc-800 bg-zinc-950 px-2 py-2">
+						<div
+							class="flex shrink-0 items-center gap-1 rounded-lg border border-zinc-800 bg-zinc-950 px-2 py-2"
+						>
 							<input
 								type="number"
 								bind:value={newTargetCount}
@@ -353,13 +337,13 @@
 			</div>
 
 			<!-- Desktop layout -->
-			<div class="hidden sm:flex flex-col gap-2">
+			<div class="hidden flex-col gap-2 sm:flex">
 				<div class="flex items-center gap-2">
 					<input
 						type="text"
 						bind:value={newName}
 						placeholder="New habit (e.g. Exercise, Read, Meditate)"
-						class="min-w-0 flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-indigo-500 focus:outline-none"
+						class="min-w-0 flex-1 input"
 					/>
 					<div class="flex shrink-0 gap-1">
 						{#each colorOptions as c (c.value)}
@@ -376,13 +360,13 @@
 					</div>
 				</div>
 
-				<div class="h-px bg-zinc-800/50"></div>
+				<div class="separator"></div>
 
 				<div class="flex items-center gap-2">
-					<span class="shrink-0 text-xs text-zinc-500">Target</span>
+					<span class="label shrink-0">Target</span>
 					<select
 						bind:value={newTargetType}
-						class="w-auto rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
+						class="w-auto input"
 					>
 						{#each targetTypes as tt (tt.value)}
 							<option value={tt.value}>{tt.label}</option>
@@ -390,14 +374,16 @@
 					</select>
 
 					{#if showCountInput}
-						<div class="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2">
+						<div
+							class="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2"
+						>
 							<input
 								type="number"
 								bind:value={newTargetCount}
 								min="1"
 								class="w-12 bg-transparent text-right text-sm text-zinc-100 focus:outline-none"
 							/>
-							<span class="text-xs text-zinc-500">
+							<span class="label">
 								{newTargetType === 'weekly' ? '× / week' : '× / month'}
 							</span>
 						</div>
@@ -405,12 +391,7 @@
 				</div>
 			</div>
 
-			<button
-				type="submit"
-				class="btn-primary"
-			>
-				Add Habit
-			</button>
+			<button type="submit" class="btn-primary"> Add Habit </button>
 		</form>
 	</div>
 

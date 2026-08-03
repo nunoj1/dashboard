@@ -146,8 +146,8 @@
 </script>
 
 <div class="space-y-3">
-	<div class="mb-4 flex flex-wrap items-center justify-between">
-		<div class="flex gap-1 rounded-lg border border-zinc-800/50 bg-zinc-950/50 p-1">
+	<div class="min-w-0">
+		<div class="flex flex-wrap gap-1 card-inner p-1">
 			{#each ranges as r (r.value)}
 				<button
 					type="button"
@@ -164,7 +164,7 @@
 		<div class="max-h-[400px] space-y-2 overflow-y-auto pr-1">
 			{#each tickers as t (t.id)}
 				<div
-					class="group relative rounded-lg border border-zinc-800/50 bg-zinc-950/50 p-3 transition hover:border-zinc-700/50"
+					class="group relative card-inner p-3 transition hover:border-zinc-700/50"
 				>
 					<button
 						type="button"
@@ -267,13 +267,13 @@
 				type="text"
 				bind:value={newSymbol}
 				placeholder="Symbol (e.g. BTC-USD)"
-				class="min-w-0 flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-indigo-500 focus:outline-none"
+				class="min-w-0 flex-1 input"
 			/>
 			<input
 				type="text"
 				bind:value={newName}
 				placeholder="Label"
-				class="min-w-0 flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-indigo-500 focus:outline-none"
+				class="min-w-0 flex-1 input"
 			/>
 		</div>
 		<button type="submit" class="btn-primary">Add</button>

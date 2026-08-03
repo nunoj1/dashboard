@@ -98,7 +98,7 @@
 			type="text"
 			bind:value={title}
 			placeholder="What needs doing?"
-			class="flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 transition focus:border-indigo-500 focus:outline-none"
+			class="input flex-1 px-4 py-2.5"
 		/>
 		<button type="submit" class="btn-primary sm:w-auto sm:shrink-0"> Add </button>
 	</div>
@@ -106,7 +106,7 @@
 	<button
 		type="button"
 		onclick={() => (advanced = !advanced)}
-		class="flex items-center gap-1 text-xs text-zinc-500 transition hover:text-zinc-300"
+		class="flex items-center gap-1 label transition hover:text-zinc-300"
 	>
 		<svg
 			class="h-3 w-3 transition-transform {advanced ? 'rotate-90' : ''}"
@@ -120,17 +120,17 @@
 	</button>
 
 	{#if advanced}
-		<div class="space-y-4 rounded-lg border border-zinc-800/50 bg-zinc-950/50 p-4">
+		<div class="space-y-4 card-inner p-4">
 			<!-- Category & Location -->
 			<div class="grid grid-cols-2 gap-3">
 				<div>
-					<p class="mb-1.5 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase">
+					<p class="mb-1.5 label">
 						Category
 					</p>
 					<CategoryInput bind:value={category} categories={allCategories} />
 				</div>
 				<div>
-					<p class="mb-1.5 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase">
+					<p class="mb-1.5 label">
 						Location
 					</p>
 					<LocationInput bind:value={location} locations={allLocations} />
@@ -142,7 +142,7 @@
 				<p class=" mb-2 text-[10px] font-semibold text-zinc-500 uppercase">Type</p>
 				<div class=" mb-4 flex items-center justify-between">
 					<div
-						class="w-full flex items-center gap-1 rounded-lg border border-zinc-800/50 bg-zinc-950/50 p-1"
+						class="w-full flex items-center gap-1 card-inner p-1"
 					>
 						<button
 							type="button"
@@ -168,29 +168,29 @@
 
 			{#if mode === 'schedule'}
 				<div class="border-t border-zinc-800/30 pt-4">
-					<p class="mb-1.5 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase">Due</p>
+					<p class="mb-1.5 label">Due</p>
 					<div class="flex gap-3">
 						<input
 							type="date"
 							bind:value={dueDate}
-							class="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 scheme-dark focus:border-indigo-500 focus:outline-none"
+							class="input scheme-dark"
 						/>
 						<input
 							type="time"
 							bind:value={dueTime}
-							class="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 scheme-dark focus:border-indigo-500 focus:outline-none"
+							class="input scheme-dark"
 						/>
 					</div>
 					<p class="mt-1.5 text-xs text-zinc-600">Priority auto-set by urgency.</p>
 				</div>
 			{:else}
 				<div class="border-t border-zinc-800/30 pt-4">
-					<p class="mb-1.5 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase">
+					<p class="mb-1.5 label">
 						Priority
 					</p>
 					<select
 						bind:value={priority}
-						class="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
+						class="input"
 					>
 						<option value="low">Low</option>
 						<option value="medium">Medium</option>
@@ -200,20 +200,20 @@
 			{/if}
 
 			<div class="border-t border-zinc-800/30 pt-4">
-				<p class="mb-1.5 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase">
+				<p class="mb-1.5 label">
 					Description
 				</p>
 				<textarea
 					bind:value={description}
 					placeholder="Add details..."
 					rows="2"
-					class="w-full resize-none rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-2 text-sm text-zinc-100 placeholder-zinc-600 transition focus:border-indigo-500 focus:outline-none"
+					class="w-full resize-none input px-4"
 				></textarea>
 			</div>
 
 			<div class="border-t border-zinc-800/30 pt-4">
 				<div class="mb-2 flex items-center justify-between">
-					<p class="text-[10px] font-semibold tracking-wider text-zinc-500 uppercase">Subtasks</p>
+					<p class="label">Subtasks</p>
 					<span class="text-[10px] text-zinc-600">Break into smaller steps</span>
 				</div>
 				<div class="space-y-2">
@@ -224,7 +224,7 @@
 								value={subtask}
 								oninput={(e) => updateSubtask(i, e.currentTarget.value)}
 								placeholder="Step {i + 1}"
-								class="flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 transition focus:border-indigo-500 focus:outline-none"
+								class="flex-1 input py-1.5"
 							/>
 							<button
 								type="button"

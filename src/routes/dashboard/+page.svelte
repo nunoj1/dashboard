@@ -147,7 +147,7 @@
 					<div class="mt-6 mb-4 border-t border-zinc-800/50"></div>
 
 					<div class="mb-4 flex items-center justify-between">
-						<div class="flex gap-1 rounded-lg border border-zinc-800/50 bg-zinc-950/50 p-1">
+						<div class="flex gap-1 card-inner p-1">
 							<button
 								onclick={() => {
 									filter = 'active';
@@ -174,7 +174,7 @@
 
 					{#if filter === 'active'}
 						<div class="mb-4 flex items-center justify-between">
-							<div class="flex gap-1 rounded-lg border border-zinc-800/50 bg-zinc-950/50 p-1">
+							<div class="flex gap-1 card-inner p-1">
 								{#each [['none', 'None'], ['category', 'Category'], ['location', 'Location']] as [val, label] (val)}
 									<button
 										onclick={() => (activeGroupBy = val as 'none' | 'category' | 'location')}
@@ -198,7 +198,7 @@
 									loadHistory();
 								}}
 								placeholder="Search history..."
-								class="flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-indigo-500 focus:outline-none"
+								class="flex-1 input"
 							/>
 						</div>
 					{/if}
@@ -216,7 +216,7 @@
 
 					{#if filter === 'done' && totalPages > 1}
 						<div class="mt-6 flex items-center justify-between border-t border-zinc-800/50 pt-4">
-							<span class="text-xs text-zinc-500">
+							<span class="label">
 								Page {historyPage} of {totalPages} ({historyTotal} total)
 							</span>
 							<div class="flex gap-2">
@@ -226,7 +226,7 @@
 										loadHistory();
 									}}
 									disabled={historyPage <= 1}
-									class="rounded-lg border border-zinc-800 px-3 py-1.5 text-sm text-zinc-400 transition hover:border-zinc-600 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-30"
+									class="btn-nav px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-30"
 								>
 									Previous
 								</button>
@@ -236,7 +236,7 @@
 										loadHistory();
 									}}
 									disabled={historyPage >= totalPages}
-									class="rounded-lg border border-zinc-800 px-3 py-1.5 text-sm text-zinc-400 transition hover:border-zinc-600 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-30"
+									class="btn-nav px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-30"
 								>
 									Next
 								</button>
