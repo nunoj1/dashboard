@@ -9,14 +9,6 @@ export const newsSources = sqliteTable('news_sources', {
 	order: integer('order').default(0)
 });
 
-export const newsTags = sqliteTable('news_tags', {
-	id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-	userId: text('user_id').notNull(),
-	tag: text('tag').notNull(),
-	active: integer('active', { mode: 'boolean' }).default(true),
-	order: integer('order').default(0)
-});
-
 export const newsArticles = sqliteTable(
 	'news_articles',
 	{

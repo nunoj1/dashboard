@@ -1,20 +1,10 @@
 <script lang="ts">
 	import { trpc } from '$lib/trpc/client';
 	import { onMount } from 'svelte';
-	import { timeAgo } from '$lib/utils/date';
-	import {
-		RefreshCw,
-		Check,
-		CheckCheck,
-		X,
-		Plus,
-		Bookmark,
-		BookmarkCheck,
-		Search,
-		ExternalLink,
-		ChevronLeft,
-		ChevronRight
-	} from '@lucide/svelte';
+	import { RefreshCw, Plus, Search } from '@lucide/svelte';
+	import Pagination from '$lib/components/ui/Pagination.svelte';
+	import NewsArticleCard from '$lib/components/news/NewsArticleCard.svelte';
+	import NewsSourceBadge from '$lib/components/news/NewsSourceBadge.svelte';
 
 	interface FeedItem {
 		title: string;
@@ -43,21 +33,14 @@
 		active: boolean | null;
 	}
 
-	interface Tag {
-		id: number;
-		tag: string;
-		active: boolean | null;
-	}
-
 	let feed = $state<FeedItem[]>([]);
 	let saved = $state<SavedArticle[]>([]);
 	let sources = $state<Source[]>([]);
-	let tags = $state<Tag[]>([]);
+	let savedUrls = $state<Set<string>>(new Set());
 	let showRead = $state(false);
 	let loadingFeed = $state(false);
 	let loadingSaved = $state(false);
 	let error = $state('');
-	let newTag = $state('');
 	let newSourceName = $state('');
 	let newSourceUrl = $state('');
 	let feedSearch = $state('');
@@ -67,14 +50,6 @@
 	let feedPage = $state(1);
 	let feedTotalPages = $state(0);
 
-	const timeRangeLabels: Record<string, string> = {
-		hour: 'Last hour',
-		day: 'Last day',
-		week: 'Last week',
-		month: 'Last month',
-		all: 'All time'
-	};
-
 	onMount(() => {
 		loadConfig();
 		loadSaved();
@@ -83,16 +58,14 @@
 	async function loadConfig() {
 		const config = await trpc().news.getConfig.query();
 		sources = config.sources;
-		tags = config.tags;
 	}
 
 	async function loadSaved() {
 		loadingSaved = true;
 		try {
-			saved = await trpc().news.getSaved.query({
-				includeRead: showRead,
-				limit: 50
-			});
+			const articles = await trpc().news.getSaved.query({ includeRead: showRead, limit: 50 });
+			saved = articles;
+			savedUrls = new Set(articles.map((a) => a.url));
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load saved';
 		} finally {
@@ -104,11 +77,7 @@
 		loadingFeed = true;
 		error = '';
 		try {
-			const result = await trpc().news.fetch.query({
-				timeRange,
-				page: feedPage,
-				limit: 5
-			});
+			const result = await trpc().news.fetch.query({ timeRange, page: feedPage, limit: 5 });
 			feed = result.items;
 			feedTotalPages = result.totalPages;
 		} catch (e) {
@@ -123,52 +92,29 @@
 		if (!newSourceName.trim() || !newSourceUrl.trim()) return;
 		error = '';
 		try {
-			await trpc().news.addSource.mutate({
-				name: newSourceName.trim(),
-				url: newSourceUrl.trim()
-			});
+			await trpc().news.addSource.mutate({ name: newSourceName.trim(), url: newSourceUrl.trim() });
 			newSourceName = '';
 			newSourceUrl = '';
 			await loadConfig();
+			feedPage = 1;
 			await fetchFeed();
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to add source';
 		}
 	}
 
-	async function toggleSource(id: number) {
+	async function handleToggleSource(id: number) {
 		await trpc().news.toggleSource.mutate({ id });
 		await loadConfig();
+		feedPage = 1;
 		await fetchFeed();
 	}
 
-	async function removeSource(id: number) {
+	async function handleRemoveSource(id: number) {
 		await trpc().news.removeSource.mutate({ id });
 		await loadConfig();
+		feedPage = 1;
 		await fetchFeed();
-	}
-
-	async function addTag(e: Event) {
-		e.preventDefault();
-		if (!newTag.trim()) return;
-		error = '';
-		try {
-			await trpc().news.addTag.mutate({ tag: newTag.trim() });
-			newTag = '';
-			await loadConfig();
-		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to add tag';
-		}
-	}
-
-	async function toggleTag(id: number) {
-		await trpc().news.toggleTag.mutate({ id });
-		await loadConfig();
-	}
-
-	async function removeTag(id: number) {
-		await trpc().news.removeTag.mutate({ id });
-		await loadConfig();
 	}
 
 	async function saveArticle(item: FeedItem) {
@@ -180,16 +126,34 @@
 			imageUrl: item.imageUrl,
 			publishedAt: item.publishedAt
 		});
+		savedUrls.add(item.url);
+		savedUrls = new Set(savedUrls);
 	}
 
 	async function unsaveArticle(id: number) {
+		const article = saved.find((s) => s.id === id);
 		await trpc().news.unsave.mutate({ id });
+		if (article) {
+			savedUrls.delete(article.url);
+			savedUrls = new Set(savedUrls);
+		}
 		await loadSaved();
 	}
 
 	async function toggleRead(id: number) {
 		await trpc().news.markRead.mutate({ id });
 		await loadSaved();
+	}
+
+	function setTimeRange(range: typeof timeRange) {
+		timeRange = range;
+		feedPage = 1;
+		fetchFeed();
+	}
+
+	function goToFeedPage(p: number) {
+		feedPage = p;
+		fetchFeed();
 	}
 
 	let filteredFeed = $derived(
@@ -214,11 +178,11 @@
 </script>
 
 <div class="space-y-3">
-	<!-- Tabs -->
-	<div class="flex gap-1 card-inner p-1">
+	<!-- Tabs — 50% width each -->
+	<div class="flex card-inner p-1">
 		<button
 			onclick={() => (activeTab = 'feed')}
-			class={activeTab === 'feed' ? 'btn-toggle-active' : 'btn-toggle-inactive'}
+			class="flex-1 {activeTab === 'feed' ? 'btn-toggle-active' : 'btn-toggle-inactive'}"
 		>
 			Feed
 		</button>
@@ -227,7 +191,7 @@
 				activeTab = 'saved';
 				loadSaved();
 			}}
-			class={activeTab === 'saved' ? 'btn-toggle-active' : 'btn-toggle-inactive'}
+			class="flex-1 {activeTab === 'saved' ? 'btn-toggle-active' : 'btn-toggle-inactive'}"
 		>
 			Saved
 		</button>
@@ -237,115 +201,41 @@
 		<!-- Sources -->
 		<div class="flex flex-wrap gap-1.5">
 			{#each sources as s (s.id)}
-				<button
-					type="button"
-					onclick={() => toggleSource(s.id)}
-					class="group flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition {s.active
-						? 'border-violet-700/40 bg-violet-950/60 text-violet-200'
-						: 'border-zinc-800 bg-zinc-950/50 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300'}"
-				>
-					{s.name}
-					<span
-						role="button"
-						tabindex="0"
-						onclick={(e) => {
-							e.stopPropagation();
-							removeSource(s.id);
-						}}
-						onkeydown={(e) => e.key === 'Enter' && removeSource(s.id)}
-						class="ml-0.5 rounded-full p-0.5 text-zinc-600 transition hover:bg-zinc-800 hover:text-red-400"
-					>
-						<X class="h-3 w-3" />
-					</span>
-				</button>
+				<NewsSourceBadge
+					id={s.id}
+					name={s.name}
+					active={s.active ?? true}
+					onToggle={handleToggleSource}
+					onRemove={handleRemoveSource}
+				/>
 			{/each}
-
 			<form onsubmit={addSource} class="flex items-center gap-1">
-				<input
-					type="text"
-					bind:value={newSourceName}
-					placeholder="Name"
-					class="input-inline w-24 text-xs"
-				/>
-				<input
-					type="text"
-					bind:value={newSourceUrl}
-					placeholder="URL"
-					class="input-inline w-32 text-xs"
-				/>
-				<button type="submit" class="btn-nav p-1">
-					<Plus class="h-3 w-3" />
-				</button>
+				<input type="text" bind:value={newSourceName} placeholder="Name" class="input-inline w-24 text-xs" />
+				<input type="text" bind:value={newSourceUrl} placeholder="URL" class="input-inline w-32 text-xs" />
+				<button type="submit" class="btn-nav p-1"><Plus class="h-3 w-3" /></button>
 			</form>
 		</div>
 
-		<!-- Tags -->
-		<div class="flex flex-wrap gap-1.5">
-			{#each tags as t (t.id)}
+		<!-- Time filter -->
+		<div class="card-inner flex flex-wrap gap-1 p-1">
+			{#each [['hour', '1H'], ['day', '1D'], ['week', '1W'], ['month', '1M'], ['all', 'All']] as [val, label]}
 				<button
-					type="button"
-					onclick={() => toggleTag(t.id)}
-					class="group flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition {t.active
-						? 'border-violet-700/40 bg-violet-950/60 text-violet-200'
-						: 'border-zinc-800 bg-zinc-950/50 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300'}"
+					onclick={() => setTimeRange(val as typeof timeRange)}
+					class={timeRange === val ? 'btn-toggle-active' : 'btn-toggle-inactive'}
 				>
-					{t.tag}
-					<span
-						role="button"
-						tabindex="0"
-						onclick={(e) => {
-							e.stopPropagation();
-							removeTag(t.id);
-						}}
-						onkeydown={(e) => e.key === 'Enter' && removeTag(t.id)}
-						class="ml-0.5 rounded-full p-0.5 text-zinc-600 transition hover:bg-zinc-800 hover:text-red-400"
-					>
-						<X class="h-3 w-3" />
-					</span>
+					{label}
 				</button>
 			{/each}
-
-			<form onsubmit={addTag} class="flex items-center gap-1">
-				<input
-					type="text"
-					bind:value={newTag}
-					placeholder="+ Tag"
-					class="input-inline w-20 text-xs"
-				/>
-				<button type="submit" class="btn-nav p-1">
-					<Plus class="h-3 w-3" />
-				</button>
-			</form>
 		</div>
 
-		<!-- Time filter + Search + Fetch -->
-		<div class="flex flex-wrap items-center gap-2">
-			<div class="card-inner flex flex-wrap gap-1 p-1">
-				{#each [['hour', '1H'], ['day', '1D'], ['week', '1W'], ['month', '1M'], ['all', 'All']] as [val, label]}
-					<button
-						onclick={() => {
-							timeRange = val as typeof timeRange;
-							feedPage = 1;
-							fetchFeed();
-						}}
-						class={timeRange === val ? 'btn-toggle-active' : 'btn-toggle-inactive'}
-					>
-						{label}
-					</button>
-				{/each}
-			</div>
-
+		<!-- Search + Refresh -->
+		<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
 			<div class="relative min-w-0 flex-1">
 				<Search class="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-600" />
-				<input
-					type="text"
-					bind:value={feedSearch}
-					placeholder="Search feed..."
-					class="input w-full pl-8"
-				/>
+				<input type="text" bind:value={feedSearch} placeholder="Search feed..." class="input w-full pl-8" />
 			</div>
-			<button onclick={fetchFeed} class="btn-nav" title="Fetch news">
-				<RefreshCw class="h-3 w-3" />
+			<button onclick={fetchFeed} class="btn-nav w-full sm:w-auto" title="Fetch news">
+				<RefreshCw class="mr-1 inline h-3 w-3" /> Refresh
 			</button>
 		</div>
 
@@ -353,193 +243,62 @@
 		{#if filteredFeed.length > 0}
 			<div class="space-y-2">
 				{#each filteredFeed as item (item.url)}
-					<div
-						class="group flex gap-3 rounded-lg border border-zinc-800/50 bg-zinc-950/50 p-2 transition hover:border-zinc-700/50"
-					>
-						{#if item.imageUrl}
-							<img
-								src={item.imageUrl}
-								alt=""
-								class="h-20 w-28 shrink-0 rounded-md object-cover"
-								loading="lazy"
-							/>
-						{:else}
-							<div class="h-20 w-28 shrink-0 rounded-md bg-zinc-900"></div>
-						{/if}
-						<div class="min-w-0 flex-1">
-							<a
-								href={item.url}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="block truncate text-xs font-medium text-zinc-200 transition hover:text-indigo-300"
-								title={item.title}
-							>
-								{item.title}
-								<ExternalLink class="ml-0.5 inline h-3 w-3 text-zinc-600" />
-							</a>
-							<div class="mt-0.5 text-[10px] text-zinc-500">
-								{item.source} • {timeAgo(item.publishedAt)}
-							</div>
-							{#if item.description}
-								<p
-									class="mt-1 line-clamp-3 text-[11px] text-zinc-400"
-									title={item.description}
-								>
-									{item.description.replace(/<[^>]+>/g, '')}
-								</p>
-							{/if}
-						</div>
-						<button
-							type="button"
-							onclick={() => saveArticle(item)}
-							class="shrink-0 self-center rounded-md p-1 text-zinc-600 transition hover:text-violet-400"
-							title="Save article"
-						>
-							<Bookmark class="h-4 w-4" />
-						</button>
-					</div>
+					<NewsArticleCard
+						title={item.title}
+						source={item.source}
+						url={item.url}
+						publishedAt={item.publishedAt}
+						imageUrl={item.imageUrl}
+						description={item.description}
+						isSaved={savedUrls.has(item.url)}
+						showActions="save"
+						onSave={() => saveArticle(item)}
+					/>
 				{/each}
 			</div>
-
-			<!-- Pagination -->
-			{#if feedTotalPages > 1}
-				<div class="flex items-center justify-between">
-					<span class="label">Page {feedPage} of {feedTotalPages}</span>
-					<div class="flex gap-1">
-						<button
-							onclick={() => {
-								feedPage--;
-								fetchFeed();
-							}}
-							disabled={feedPage <= 1}
-							class="btn-nav p-1 disabled:cursor-not-allowed disabled:opacity-30"
-						>
-							<ChevronLeft class="h-3 w-3" />
-						</button>
-						<button
-							onclick={() => {
-								feedPage++;
-								fetchFeed();
-							}}
-							disabled={feedPage >= feedTotalPages}
-							class="btn-nav p-1 disabled:cursor-not-allowed disabled:opacity-30"
-						>
-							<ChevronRight class="h-3 w-3" />
-						</button>
-					</div>
-				</div>
-			{/if}
+			<Pagination current={feedPage} total={feedTotalPages} onChange={goToFeedPage} />
 		{:else}
 			<p class="py-6 text-center text-sm text-zinc-600">
 				{loadingFeed ? '' : error ? '' : sources.length === 0 ? 'Add a news source to get started.' : 'Click refresh to fetch news.'}
 			</p>
 		{/if}
-
-		{#if loadingFeed}
-			<p class="text-center text-xs text-zinc-600">Fetching...</p>
-		{/if}
+		{#if loadingFeed}<p class="text-center text-xs text-zinc-600">Fetching...</p>{/if}
 	{:else}
-		<!-- Saved Search -->
+		<!-- Saved -->
 		<div class="relative">
 			<Search class="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-600" />
-			<input
-				type="text"
-				bind:value={savedSearch}
-				placeholder="Search saved..."
-				class="input w-full pl-8"
-			/>
+			<input type="text" bind:value={savedSearch} placeholder="Search saved..." class="input w-full pl-8" />
 		</div>
-
 		<div class="flex items-center justify-between">
 			<span class="label">Saved ({filteredSaved.length})</span>
 			<button
-				onclick={() => {
-					showRead = !showRead;
-					loadSaved();
-				}}
+				onclick={() => { showRead = !showRead; loadSaved(); }}
 				class={showRead ? 'btn-toggle-active' : 'btn-toggle-inactive'}
 			>
 				{showRead ? 'Hide read' : 'Show read'}
 			</button>
 		</div>
-
-		<!-- Saved Articles -->
 		{#if filteredSaved.length > 0}
 			<div class="space-y-2">
 				{#each filteredSaved as a (a.id)}
-					<div
-						class="group flex gap-3 rounded-lg border border-zinc-800/50 bg-zinc-950/50 p-2 transition hover:border-zinc-700/50 {a.read ? 'opacity-50' : ''}"
-					>
-						{#if a.imageUrl}
-							<img
-								src={a.imageUrl}
-								alt=""
-								class="h-20 w-28 shrink-0 rounded-md object-cover"
-								loading="lazy"
-							/>
-						{:else}
-							<div class="h-20 w-28 shrink-0 rounded-md bg-zinc-900"></div>
-						{/if}
-						<div class="min-w-0 flex-1">
-							<a
-								href={a.url}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="block truncate text-xs font-medium text-zinc-200 transition hover:text-indigo-300"
-								title={a.title}
-							>
-								{a.title}
-								<ExternalLink class="ml-0.5 inline h-3 w-3 text-zinc-600" />
-							</a>
-							<div class="mt-0.5 text-[10px] text-zinc-500">
-								{a.source} • {timeAgo(a.publishedAt)}
-							</div>
-							{#if a.description}
-								<p
-									class="mt-1 line-clamp-3 text-[11px] text-zinc-400"
-									title={a.description}
-								>
-									{a.description.replace(/<[^>]+>/g, '')}
-								</p>
-							{/if}
-						</div>
-						<div class="flex shrink-0 flex-col gap-1 self-center">
-							<button
-								type="button"
-								onclick={() => toggleRead(a.id)}
-								class="rounded-md p-1 text-zinc-600 transition hover:text-zinc-300"
-								title={a.read ? 'Mark unread' : 'Mark read'}
-							>
-								{#if a.read}
-									<CheckCheck class="h-4 w-4" />
-								{:else}
-									<Check class="h-4 w-4" />
-								{/if}
-							</button>
-							<button
-								type="button"
-								onclick={() => unsaveArticle(a.id)}
-								class="rounded-md p-1 text-zinc-600 transition hover:text-red-400"
-								title="Remove"
-							>
-								<X class="h-4 w-4" />
-							</button>
-						</div>
-					</div>
+					<NewsArticleCard
+						title={a.title}
+						source={a.source}
+						url={a.url}
+						publishedAt={a.publishedAt}
+						imageUrl={a.imageUrl}
+						description={a.description}
+						isRead={a.read}
+						showActions="saved"
+						onToggleRead={() => toggleRead(a.id)}
+						onUnsave={() => unsaveArticle(a.id)}
+					/>
 				{/each}
 			</div>
 		{:else}
-			<p class="py-6 text-center text-sm text-zinc-600">
-				{loadingSaved ? '' : 'No saved articles yet.'}
-			</p>
+			<p class="py-6 text-center text-sm text-zinc-600">{loadingSaved ? '' : 'No saved articles yet.'}</p>
 		{/if}
-
-		{#if loadingSaved}
-			<p class="text-center text-xs text-zinc-600">Loading...</p>
-		{/if}
+		{#if loadingSaved}<p class="text-center text-xs text-zinc-600">Loading...</p>{/if}
 	{/if}
-
-	{#if error}
-		<p class="text-center text-xs text-red-400">{error}</p>
-	{/if}
+	{#if error}<p class="text-center text-xs text-red-400">{error}</p>{/if}
 </div>

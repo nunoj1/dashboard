@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Pagination from '$lib/components/ui/Pagination.svelte';
 	import TodoForm from './TodoForm.svelte';
 	import TodoList from './TodoList.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
@@ -132,7 +133,9 @@
 				onclick={() => {
 					filter = 'active';
 				}}
-				class="{filter === 'active' ? 'btn-toggle-active' : 'btn-toggle-inactive'} px-4 py-1.5 text-sm"
+				class="{filter === 'active'
+					? 'btn-toggle-active'
+					: 'btn-toggle-inactive'} px-4 py-1.5 text-sm"
 			>
 				Active
 			</button>
@@ -141,7 +144,9 @@
 					filter = 'done';
 					historyPage = 1;
 				}}
-				class="{filter === 'done' ? 'btn-toggle-active' : 'btn-toggle-inactive'} px-4 py-1.5 text-sm"
+				class="{filter === 'done'
+					? 'btn-toggle-active'
+					: 'btn-toggle-inactive'} px-4 py-1.5 text-sm"
 			>
 				History
 			</button>
@@ -154,7 +159,9 @@
 				{#each [['none', 'None'], ['category', 'Category'], ['location', 'Location']] as [val, label] (val)}
 					<button
 						onclick={() => (activeGroupBy = val as 'none' | 'category' | 'location')}
-						class="{activeGroupBy === val ? 'btn-toggle-active' : 'btn-toggle-inactive'} px-3 py-1 text-xs"
+						class="{activeGroupBy === val
+							? 'btn-toggle-active'
+							: 'btn-toggle-inactive'} px-3 py-1 text-xs"
 					>
 						{label}
 					</button>
@@ -187,30 +194,15 @@
 	/>
 
 	{#if filter === 'done' && totalPages > 1}
-		<div class="separator mt-6 flex items-center justify-between pt-4">
-			<span class="label">Page {historyPage} of {totalPages} ({historyTotal} total)</span>
-			<div class="flex gap-2">
-				<button
-					onclick={() => {
-						historyPage--;
-						loadHistory();
-					}}
-					disabled={historyPage <= 1}
-					class="btn-nav px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-30"
-				>
-					Previous
-				</button>
-				<button
-					onclick={() => {
-						historyPage++;
-						loadHistory();
-					}}
-					disabled={historyPage >= totalPages}
-					class="btn-nav px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-30"
-				>
-					Next
-				</button>
-			</div>
+		<div class="separator mt-6 flex items-center justify-center pt-4">
+			<Pagination
+				current={historyPage}
+				total={totalPages}
+				onChange={(p) => {
+					historyPage = p;
+					loadHistory();
+				}}
+			/>
 		</div>
 	{/if}
 </div>

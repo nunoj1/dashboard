@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { eq, and, desc } from 'drizzle-orm';
 import { db } from '$lib/db';
-import { newsSources, newsTags, newsArticles } from '$lib/db/schema/index';
+import { newsSources, newsArticles } from '$lib/db/schema/index';
 import { t } from '../init';
 
 interface RssItem {
@@ -94,10 +94,17 @@ async function fetchSourceRss(sourceUrl: string, sourceName: string): Promise<Rs
 	return [];
 }
 
+function parseRssDate(dateStr: string): Date | null {
+	if (!dateStr) return null;
+	const d = new Date(dateStr);
+	if (!isNaN(d.getTime())) return d;
+	return null;
+}
+
 function isWithinTimeRange(pubDateStr: string, range: string): boolean {
 	if (!pubDateStr || range === 'all') return true;
-	const date = new Date(pubDateStr);
-	if (isNaN(date.getTime())) return true;
+	const date = parseRssDate(pubDateStr);
+	if (!date) return true;
 
 	const now = new Date();
 	const diffMs = now.getTime() - date.getTime();
@@ -119,20 +126,14 @@ function isWithinTimeRange(pubDateStr: string, range: string): boolean {
 
 export const newsRouter = t.router({
 	getConfig: t.procedure.query(async ({ ctx }) => {
-		if (!ctx.user) return { sources: [], tags: [] };
+		if (!ctx.user) return { sources: [] };
 		const sources = await db
 			.select()
 			.from(newsSources)
 			.where(eq(newsSources.userId, ctx.user.id))
 			.orderBy(newsSources.order)
 			.all();
-		const tags = await db
-			.select()
-			.from(newsTags)
-			.where(eq(newsTags.userId, ctx.user.id))
-			.orderBy(newsTags.order)
-			.all();
-		return { sources, tags };
+		return { sources };
 	}),
 
 	addSource: t.procedure
@@ -182,50 +183,6 @@ export const newsRouter = t.router({
 			return { id: input.id };
 		}),
 
-	addTag: t.procedure
-		.input(z.object({ tag: z.string().min(1).max(30) }))
-		.mutation(async ({ input, ctx }) => {
-			if (!ctx.user) throw new Error('Unauthorized');
-			const existing = await db
-				.select()
-				.from(newsTags)
-				.where(and(eq(newsTags.userId, ctx.user.id), eq(newsTags.tag, input.tag)))
-				.limit(1)
-				.all();
-			if (existing.length) throw new Error('Tag already exists');
-			const [created] = await db
-				.insert(newsTags)
-				.values({ userId: ctx.user.id, tag: input.tag, active: true })
-				.returning();
-			return created;
-		}),
-
-	toggleTag: t.procedure
-		.input(z.object({ id: z.number() }))
-		.mutation(async ({ input, ctx }) => {
-			if (!ctx.user) throw new Error('Unauthorized');
-			const [tag] = await db
-				.select()
-				.from(newsTags)
-				.where(eq(newsTags.id, input.id))
-				.limit(1)
-				.all();
-			if (!tag) throw new Error('Tag not found');
-			await db
-				.update(newsTags)
-				.set({ active: !tag.active })
-				.where(eq(newsTags.id, input.id));
-			return { active: !tag.active };
-		}),
-
-	removeTag: t.procedure
-		.input(z.object({ id: z.number() }))
-		.mutation(async ({ input, ctx }) => {
-			if (!ctx.user) throw new Error('Unauthorized');
-			await db.delete(newsTags).where(eq(newsTags.id, input.id));
-			return { id: input.id };
-		}),
-
 	fetch: t.procedure
 		.input(
 			z
@@ -255,7 +212,12 @@ export const newsRouter = t.router({
 
 			const filtered = allItems
 				.filter((item) => isWithinTimeRange(item.pubDate, input.timeRange))
-				.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+				.sort((a, b) => {
+					const da = parseRssDate(a.pubDate);
+					const db_ = parseRssDate(b.pubDate);
+					if (!da || !db_) return 0;
+					return db_.getTime() - da.getTime();
+				});
 
 			const total = filtered.length;
 			const totalPages = Math.ceil(total / input.limit);
@@ -300,6 +262,16 @@ export const newsRouter = t.router({
 				.limit(input.limit)
 				.all();
 		}),
+
+	getSavedUrls: t.procedure.query(async ({ ctx }) => {
+		if (!ctx.user) return [];
+		const articles = await db
+			.select({ url: newsArticles.url })
+			.from(newsArticles)
+			.where(eq(newsArticles.userId, ctx.user.id))
+			.all();
+		return articles.map((a) => a.url);
+	}),
 
 	save: t.procedure
 		.input(
