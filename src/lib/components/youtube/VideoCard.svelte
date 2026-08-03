@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { timeAgo } from '$lib/utils/date';
-	import { Eye, EyeOff } from '@lucide/svelte';
 
 	interface Props {
 		videoId: string;
@@ -8,22 +7,24 @@
 		thumbnailUrl: string | null;
 		publishedAt: string;
 		channelName: string;
-		watched: boolean;
-		onToggleWatched: () => void;
+		onClick?: () => void;
 	}
 
-	let { videoId, title, thumbnailUrl, publishedAt, channelName, watched, onToggleWatched }: Props =
-		$props();
+	let { videoId, title, thumbnailUrl, publishedAt, channelName, onClick }: Props = $props();
 </script>
 
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class="group flex gap-3 rounded-lg border border-zinc-800/50 bg-zinc-950/50 p-2 transition hover:border-zinc-700/50"
+	class="group flex gap-3 rounded-lg border border-zinc-800/50 bg-zinc-950/50 p-2 transition hover:border-zinc-700/50 cursor-pointer"
+	onclick={onClick}
 >
 	<a
 		href="https://youtube.com/watch?v={videoId}"
 		target="_blank"
 		rel="noopener noreferrer"
 		class="shrink-0"
+		onclick={(e) => e.stopPropagation()}
 	>
 		{#if thumbnailUrl}
 			<img
@@ -42,7 +43,8 @@
 			target="_blank"
 			rel="noopener noreferrer"
 			class="block truncate text-xs font-medium text-zinc-200 transition hover:text-indigo-300"
-			{title}
+			title={title}
+			onclick={(e) => e.stopPropagation()}
 		>
 			{title}
 		</a>
@@ -50,16 +52,4 @@
 			{channelName} • {timeAgo(publishedAt)}
 		</div>
 	</div>
-	<button
-		type="button"
-		onclick={onToggleWatched}
-		class="shrink-0 self-center rounded-md p-1 text-zinc-600 transition hover:text-zinc-300"
-		title={watched ? 'Mark unwatched' : 'Mark watched'}
-	>
-		{#if watched}
-			<Eye class="h-4 w-4" />
-		{:else}
-			<EyeOff class="h-4 w-4" />
-		{/if}
-	</button>
 </div>

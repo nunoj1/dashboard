@@ -46,13 +46,14 @@
 	let feedSearch = $state('');
 	let savedSearch = $state('');
 	let activeTab = $state<'feed' | 'saved'>('feed');
-	let timeRange = $state<'hour' | 'day' | 'week' | 'month' | 'all'>('all');
+	let timeRange = $state<'hour' | 'day' | 'week' | 'month' | 'all'>('week');
 	let feedPage = $state(1);
 	let feedTotalPages = $state(0);
 
-	onMount(() => {
-		loadConfig();
-		loadSaved();
+	onMount(async () => {
+		await loadConfig();
+		await fetchFeed();
+		await loadSaved();
 	});
 
 	async function loadConfig() {
@@ -179,7 +180,7 @@
 
 <div class="space-y-3">
 	<!-- Tabs — 50% width each -->
-	<div class="flex card-inner p-1">
+	<div class="card-inner flex p-1">
 		<button
 			onclick={() => (activeTab = 'feed')}
 			class="flex-1 {activeTab === 'feed' ? 'btn-toggle-active' : 'btn-toggle-inactive'}"
@@ -210,18 +211,28 @@
 				/>
 			{/each}
 			<form onsubmit={addSource} class="flex items-center gap-1">
-				<input type="text" bind:value={newSourceName} placeholder="Name" class="input-inline w-24 text-xs" />
-				<input type="text" bind:value={newSourceUrl} placeholder="URL" class="input-inline w-32 text-xs" />
+				<input
+					type="text"
+					bind:value={newSourceName}
+					placeholder="Name"
+					class="input-inline w-24 text-xs"
+				/>
+				<input
+					type="text"
+					bind:value={newSourceUrl}
+					placeholder="URL"
+					class="input-inline w-32 text-xs"
+				/>
 				<button type="submit" class="btn-nav p-1"><Plus class="h-3 w-3" /></button>
 			</form>
 		</div>
 
 		<!-- Time filter -->
-		<div class="card-inner flex flex-wrap gap-1 p-1">
+		<div class="card-inner flex  w-full gap-1 p-1">
 			{#each [['hour', '1H'], ['day', '1D'], ['week', '1W'], ['month', '1M'], ['all', 'All']] as [val, label]}
 				<button
 					onclick={() => setTimeRange(val as typeof timeRange)}
-					class={timeRange === val ? 'btn-toggle-active' : 'btn-toggle-inactive'}
+					class="flex-1 {timeRange === val ? 'btn-toggle-active' : 'btn-toggle-inactive'}"
 				>
 					{label}
 				</button>
@@ -231,8 +242,13 @@
 		<!-- Search + Refresh -->
 		<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
 			<div class="relative min-w-0 flex-1">
-				<Search class="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-600" />
-				<input type="text" bind:value={feedSearch} placeholder="Search feed..." class="input w-full pl-8" />
+				<Search class="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-zinc-600" />
+				<input
+					type="text"
+					bind:value={feedSearch}
+					placeholder="Search feed..."
+					class="input w-full pl-8"
+				/>
 			</div>
 			<button onclick={fetchFeed} class="btn-nav w-full sm:w-auto" title="Fetch news">
 				<RefreshCw class="mr-1 inline h-3 w-3" /> Refresh
@@ -259,20 +275,34 @@
 			<Pagination current={feedPage} total={feedTotalPages} onChange={goToFeedPage} />
 		{:else}
 			<p class="py-6 text-center text-sm text-zinc-600">
-				{loadingFeed ? '' : error ? '' : sources.length === 0 ? 'Add a news source to get started.' : 'Click refresh to fetch news.'}
+				{loadingFeed
+					? ''
+					: error
+						? ''
+						: sources.length === 0
+							? 'Add a news source to get started.'
+							: 'Click refresh to fetch news.'}
 			</p>
 		{/if}
 		{#if loadingFeed}<p class="text-center text-xs text-zinc-600">Fetching...</p>{/if}
 	{:else}
 		<!-- Saved -->
 		<div class="relative">
-			<Search class="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-600" />
-			<input type="text" bind:value={savedSearch} placeholder="Search saved..." class="input w-full pl-8" />
+			<Search class="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-zinc-600" />
+			<input
+				type="text"
+				bind:value={savedSearch}
+				placeholder="Search saved..."
+				class="input w-full pl-8"
+			/>
 		</div>
 		<div class="flex items-center justify-between">
 			<span class="label">Saved ({filteredSaved.length})</span>
 			<button
-				onclick={() => { showRead = !showRead; loadSaved(); }}
+				onclick={() => {
+					showRead = !showRead;
+					loadSaved();
+				}}
 				class={showRead ? 'btn-toggle-active' : 'btn-toggle-inactive'}
 			>
 				{showRead ? 'Hide read' : 'Show read'}
@@ -296,7 +326,9 @@
 				{/each}
 			</div>
 		{:else}
-			<p class="py-6 text-center text-sm text-zinc-600">{loadingSaved ? '' : 'No saved articles yet.'}</p>
+			<p class="py-6 text-center text-sm text-zinc-600">
+				{loadingSaved ? '' : 'No saved articles yet.'}
+			</p>
 		{/if}
 		{#if loadingSaved}<p class="text-center text-xs text-zinc-600">Loading...</p>{/if}
 	{/if}

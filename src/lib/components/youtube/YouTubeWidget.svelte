@@ -36,13 +36,14 @@
 	let searchQuery = $state('');
 	let selectedChannelId = $state<string | null>(null);
 	let selectedChannelName = $state<string | null>(null);
-	let timeFilter = $state<'day' | 'week' | 'month' | 'year' | 'all'>('all');
+	let timeFilter = $state<'day' | 'week' | 'month' | 'year' | 'all'>('week');
 	let loading = $state(false);
 	let searching = $state(false);
 	let error = $state('');
 	let videoPage = $state(1);
 	let videoTotalPages = $state(0);
 	let activeView = $state<'subscriptions' | 'search'>('subscriptions');
+	let showSubBadges = $state(false);
 
 	onMount(() => {
 		loadSubscriptions();
@@ -64,7 +65,9 @@
 		try {
 			const records = await trpc().youtube.getWatched.query();
 			watchedSet = new Set(records.map((r) => r.videoId));
-		} catch { /* silent */ }
+		} catch {
+			/* silent */
+		}
 	}
 
 	async function handleToggleSubscription(channelId: string) {
@@ -81,7 +84,9 @@
 		error = '';
 		try {
 			const result = await trpc().youtube.getSubscriptionVideos.query({
-				timeFilter, page: videoPage, limit: 5
+				timeFilter,
+				page: videoPage,
+				limit: 5
 			});
 			videos = result.items;
 			videoTotalPages = result.totalPages;
@@ -99,7 +104,8 @@
 		error = '';
 		try {
 			searchResults = await trpc().youtube.searchChannels.query({
-				query: searchQuery.trim(), maxResults: 5
+				query: searchQuery.trim(),
+				maxResults: 5
 			});
 			activeView = 'search';
 		} catch (e) {
@@ -123,7 +129,10 @@
 		error = '';
 		try {
 			const result = await trpc().youtube.getChannelVideos.query({
-				channelId: selectedChannelId, timeFilter, page: videoPage, limit: 5
+				channelId: selectedChannelId,
+				timeFilter,
+				page: videoPage,
+				limit: 5
 			});
 			videos = result.items;
 			videoTotalPages = result.totalPages;
@@ -134,11 +143,11 @@
 		}
 	}
 
-	async function toggleWatched(videoId: string) {
+	async function markWatched(videoId: string) {
+		if (watchedSet.has(videoId)) return;
 		try {
-			const result = await trpc().youtube.toggleWatched.mutate({ videoId });
-			if (result.watched) watchedSet.add(videoId);
-			else watchedSet.delete(videoId);
+			await trpc().youtube.markWatched.mutate({ videoId });
+			watchedSet.add(videoId);
 			watchedSet = new Set(watchedSet);
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to update';
@@ -170,7 +179,12 @@
 
 <div class="space-y-3">
 	<form onsubmit={doSearch} class="flex flex-col gap-2 sm:flex-row">
-		<input type="text" bind:value={searchQuery} placeholder="Search: @handle, keyword, or #tag" class="input min-w-0 flex-1" />
+		<input
+			type="text"
+			bind:value={searchQuery}
+			placeholder="Search: @handle, keyword, or #tag"
+			class="input min-w-0 flex-1"
+		/>
 		<button type="submit" class="btn-primary w-full sm:w-auto sm:shrink-0">
 			<Search class="mr-1 inline h-3.5 w-3.5" /> Search
 		</button>
@@ -179,7 +193,7 @@
 	{#if searching}<p class="text-center text-xs text-zinc-600">Searching...</p>{/if}
 
 	{#if searchResults.length > 0 && activeView === 'search'}
-		<div class="space-y-1">
+		<div class="space-y-1.5">
 			<div class="flex items-center justify-between">
 				<p class="label">Select a channel</p>
 				<button onclick={backToSubscriptions} class="btn-text text-xs">Back to subs</button>
@@ -206,18 +220,25 @@
 
 	{#if activeView === 'subscriptions' && subscriptions.length > 0}
 		<div class="space-y-1.5">
-			<p class="label">Your subscriptions — click to toggle</p>
-			<div class="flex flex-wrap gap-1.5">
-				{#each subscriptions as sub (sub.channelId)}
-					<SubscriptionBadge
-						channelId={sub.channelId}
-						channelName={sub.channelName}
-						thumbnailUrl={sub.thumbnailUrl}
-						hidden={sub.hidden}
-						onToggle={handleToggleSubscription}
-					/>
-				{/each}
+			<div class="flex items-center justify-between">
+				<p class="label">Your subscriptions</p>
+				<button onclick={() => (showSubBadges = !showSubBadges)} class="btn-text text-xs">
+					{showSubBadges ? 'Hide' : 'Show'}
+				</button>
 			</div>
+			{#if showSubBadges}
+				<div class="flex flex-wrap gap-1.5">
+					{#each subscriptions as sub (sub.channelId)}
+						<SubscriptionBadge
+							channelId={sub.channelId}
+							channelName={sub.channelName}
+							thumbnailUrl={sub.thumbnailUrl}
+							hidden={sub.hidden}
+							onToggle={handleToggleSubscription}
+						/>
+					{/each}
+				</div>
+			{/if}
 		</div>
 	{/if}
 
@@ -253,8 +274,7 @@
 					thumbnailUrl={v.thumbnailUrl}
 					publishedAt={v.publishedAt}
 					channelName={v.channelName}
-					watched={watchedSet.has(v.videoId)}
-					onToggleWatched={() => toggleWatched(v.videoId)}
+					onClick={() => markWatched(v.videoId)}
 				/>
 			{/each}
 		</div>

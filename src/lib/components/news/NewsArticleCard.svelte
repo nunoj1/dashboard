@@ -54,7 +54,7 @@
 
 	<div class="min-w-0 flex-1">
 		<a
-			href={resolve(url)}
+			href={url}
 			target="_blank"
 			rel="noopener noreferrer"
 			class="block truncate text-xs font-medium text-zinc-200 transition hover:text-indigo-300"

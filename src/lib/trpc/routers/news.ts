@@ -17,9 +17,7 @@ function extractImageFromXml(itemXml: string): string | null {
 	const enclosure = itemXml.match(/<enclosure[^>]+url="([^"]+)"/i);
 	if (enclosure) return enclosure[1];
 
-	const mediaContent = itemXml.match(
-		/<media:content[^>]+url="([^"]+)"[^>]*type="image\/[^"]*"/i
-	);
+	const mediaContent = itemXml.match(/<media:content[^>]+url="([^"]+)"[^>]*type="image\/[^"]*"/i);
 	if (mediaContent) return mediaContent[1];
 
 	const mediaThumbnail = itemXml.match(/<media:thumbnail[^>]+url="([^"]+)"/i);
@@ -72,7 +70,11 @@ function parseRss(xml: string, sourceName: string): RssItem[] {
 	return items;
 }
 
-async function fetchSourceRss(sourceUrl: string, sourceName: string): Promise<RssItem[]> {
+async function fetchSourceRss(
+	sourceUrl: string,
+	sourceName: string,
+	maxItems: number = 20
+): Promise<RssItem[]> {
 	const feedPaths = ['/rss.xml', '/feed', '/feed/', '/rss', '/index.xml', '/atom.xml'];
 	const base = sourceUrl.replace(/\/$/, '');
 
@@ -84,7 +86,8 @@ async function fetchSourceRss(sourceUrl: string, sourceName: string): Promise<Rs
 			});
 			if (res.ok) {
 				const xml = await res.text();
-				return parseRss(xml, sourceName);
+				const items = parseRss(xml, sourceName);
+				return items.slice(0, maxItems);
 			}
 		} catch {
 			continue;
@@ -144,9 +147,7 @@ export const newsRouter = t.router({
 			const existing = await db
 				.select()
 				.from(newsSources)
-				.where(
-					and(eq(newsSources.userId, ctx.user.id), eq(newsSources.url, cleanUrl))
-				)
+				.where(and(eq(newsSources.userId, ctx.user.id), eq(newsSources.url, cleanUrl)))
 				.limit(1)
 				.all();
 			if (existing.length) throw new Error('Source already exists');
@@ -157,31 +158,27 @@ export const newsRouter = t.router({
 			return created;
 		}),
 
-	toggleSource: t.procedure
-		.input(z.object({ id: z.number() }))
-		.mutation(async ({ input, ctx }) => {
-			if (!ctx.user) throw new Error('Unauthorized');
-			const [source] = await db
-				.select()
-				.from(newsSources)
-				.where(eq(newsSources.id, input.id))
-				.limit(1)
-				.all();
-			if (!source) throw new Error('Source not found');
-			await db
-				.update(newsSources)
-				.set({ active: !source.active })
-				.where(eq(newsSources.id, input.id));
-			return { active: !source.active };
-		}),
+	toggleSource: t.procedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
+		if (!ctx.user) throw new Error('Unauthorized');
+		const [source] = await db
+			.select()
+			.from(newsSources)
+			.where(eq(newsSources.id, input.id))
+			.limit(1)
+			.all();
+		if (!source) throw new Error('Source not found');
+		await db
+			.update(newsSources)
+			.set({ active: !source.active })
+			.where(eq(newsSources.id, input.id));
+		return { active: !source.active };
+	}),
 
-	removeSource: t.procedure
-		.input(z.object({ id: z.number() }))
-		.mutation(async ({ input, ctx }) => {
-			if (!ctx.user) throw new Error('Unauthorized');
-			await db.delete(newsSources).where(eq(newsSources.id, input.id));
-			return { id: input.id };
-		}),
+	removeSource: t.procedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
+		if (!ctx.user) throw new Error('Unauthorized');
+		await db.delete(newsSources).where(eq(newsSources.id, input.id));
+		return { id: input.id };
+	}),
 
 	fetch: t.procedure
 		.input(
@@ -204,9 +201,10 @@ export const newsRouter = t.router({
 
 			if (sources.length === 0) return { items: [], total: 0, page: 1, totalPages: 0 };
 
+			const MAX_PER_SOURCE = 20;
 			const allItems: RssItem[] = [];
 			for (const source of sources) {
-				const items = await fetchSourceRss(source.url, source.name);
+				const items = await fetchSourceRss(source.url, source.name, MAX_PER_SOURCE);
 				allItems.push(...items);
 			}
 
@@ -215,7 +213,9 @@ export const newsRouter = t.router({
 				.sort((a, b) => {
 					const da = parseRssDate(a.pubDate);
 					const db_ = parseRssDate(b.pubDate);
-					if (!da || !db_) return 0;
+					if (!da && !db_) return 0;
+					if (!da) return 1;
+					if (!db_) return -1;
 					return db_.getTime() - da.getTime();
 				});
 
@@ -302,33 +302,26 @@ export const newsRouter = t.router({
 			return { saved: true };
 		}),
 
-	unsave: t.procedure
-		.input(z.object({ id: z.number() }))
-		.mutation(async ({ input, ctx }) => {
-			if (!ctx.user) throw new Error('Unauthorized');
-			await db
-				.delete(newsArticles)
-				.where(and(eq(newsArticles.id, input.id), eq(newsArticles.userId, ctx.user.id)));
-			return { id: input.id };
-		}),
+	unsave: t.procedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
+		if (!ctx.user) throw new Error('Unauthorized');
+		await db
+			.delete(newsArticles)
+			.where(and(eq(newsArticles.id, input.id), eq(newsArticles.userId, ctx.user.id)));
+		return { id: input.id };
+	}),
 
-	markRead: t.procedure
-		.input(z.object({ id: z.number() }))
-		.mutation(async ({ input, ctx }) => {
-			if (!ctx.user) throw new Error('Unauthorized');
-			const [article] = await db
-				.select()
-				.from(newsArticles)
-				.where(and(eq(newsArticles.id, input.id), eq(newsArticles.userId, ctx.user.id)))
-				.limit(1)
-				.all();
-			if (!article) throw new Error('Article not found');
-			await db
-				.update(newsArticles)
-				.set({ read: !article.read })
-				.where(eq(newsArticles.id, input.id));
-			return { read: !article.read };
-		})
+	markRead: t.procedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
+		if (!ctx.user) throw new Error('Unauthorized');
+		const [article] = await db
+			.select()
+			.from(newsArticles)
+			.where(and(eq(newsArticles.id, input.id), eq(newsArticles.userId, ctx.user.id)))
+			.limit(1)
+			.all();
+		if (!article) throw new Error('Article not found');
+		await db.update(newsArticles).set({ read: !article.read }).where(eq(newsArticles.id, input.id));
+		return { read: !article.read };
+	})
 });
 
 export type NewsRouter = typeof newsRouter;
