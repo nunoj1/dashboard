@@ -259,6 +259,7 @@ All shared styles live in src/app.css as Tailwind @layer components:
 | `pnpm check`       | Run `svelte-check` for type checking |
 
 ---
+
 ## License
 
 Personal use only. This is a single-user self-hosted dashboard.

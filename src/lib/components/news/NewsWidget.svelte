@@ -46,7 +46,6 @@
 	let feedSearch = $state('');
 	let savedSearch = $state('');
 	let activeTab = $state<'feed' | 'saved'>('feed');
-	let timeRange = $state<'hour' | 'day' | 'week' | 'month' | 'all'>('week');
 	let feedPage = $state(1);
 	let feedTotalPages = $state(0);
 	let sentinelRef = $state<HTMLDivElement | null>(null);
@@ -82,7 +81,6 @@
 		error = '';
 		try {
 			const result = await trpc().news.fetch.query({
-				timeRange,
 				page: feedPage,
 				limit: 10
 			});
@@ -155,12 +153,6 @@
 	async function toggleRead(id: number) {
 		await trpc().news.markRead.mutate({ id });
 		await loadSaved();
-	}
-
-	function setTimeRange(range: typeof timeRange) {
-		timeRange = range;
-		resetFeed();
-		fetchFeed();
 	}
 
 	function resetFeed() {
@@ -257,18 +249,6 @@
 			</form>
 		</div>
 
-		<!-- Time filter -->
-		<div class="card-inner flex w-full gap-1 p-1">
-			{#each [['hour', '1H'], ['day', '1D'], ['week', '1W'], ['month', '1M'], ['all', 'All']] as [val, label] (val)}
-				<button
-					onclick={() => setTimeRange(val as typeof timeRange)}
-					class="flex-1 {timeRange === val ? 'btn-toggle-active' : 'btn-toggle-inactive'}"
-				>
-					{label}
-				</button>
-			{/each}
-		</div>
-
 		<!-- Search + Refresh -->
 		<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
 			<div class="relative min-w-0 flex-1">
@@ -316,6 +296,11 @@
 				{/if}
 				{#if feedPage < feedTotalPages}
 					<div bind:this={sentinelRef} class="h-4"></div>
+				{:else if feedTotalPages > 0}
+					<p class="py-4 text-center text-xs text-zinc-500">
+						Whoops, that's the limit of my reach today. If you need more info, please visit the news
+						sites directly.
+					</p>
 				{/if}
 			</div>
 		{:else if loadingFeed}

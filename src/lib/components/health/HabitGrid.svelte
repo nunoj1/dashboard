@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { trpc } from '$lib/trpc/client';
+	import { getMonthDays, getToday } from '$lib/utils/date';
 
 	interface Habit {
 		id: number;
@@ -55,27 +56,8 @@
 
 	const [year, monthNum] = $derived(month.split('-').map(Number));
 
-	let daysInMonth = $derived(new Date(year, monthNum, 0).getDate());
-
 	let monthDays = $derived(
-		((): VisibleDay[] => {
-			// eslint-disable-next-line svelte/prefer-svelte-reactivity
-			const today = new Date();
-			today.setHours(0, 0, 0, 0);
-			const days: VisibleDay[] = [];
-			for (let i = 1; i <= daysInMonth; i++) {
-				const date = new Date(year, monthNum - 1, i);
-				const dateStr = `${year}-${String(monthNum).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-				days.push({
-					dateStr,
-					day: i,
-					label: date.toLocaleDateString('en-US', { weekday: 'narrow' }),
-					isToday: date.getTime() === today.getTime(),
-					isCurrentMonth: true
-				});
-			}
-			return days;
-		})()
+		getMonthDays(year, monthNum).map((d) => ({ ...d, isCurrentMonth: true }))
 	);
 
 	let weekDays = $derived(
@@ -87,9 +69,7 @@
 			// eslint-disable-next-line svelte/prefer-svelte-reactivity
 			const targetMonday = new Date(firstMonday);
 			targetMonday.setDate(firstMonday.getDate() + (week - 1) * 7);
-			// eslint-disable-next-line svelte/prefer-svelte-reactivity
-			const today = new Date();
-			today.setHours(0, 0, 0, 0);
+			const today = getToday();
 
 			const days: VisibleDay[] = [];
 			for (let i = 0; i < 7; i++) {
@@ -134,7 +114,7 @@
 		const currentViewMode = viewMode;
 		const currentWeekDays = currentViewMode === 'weekly' ? weekDays : [];
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity
-		const monthsToLoad = new Set<string>();
+		const monthsToLoad: Set<string> = new Set();
 		monthsToLoad.add(currentMonth);
 
 		for (const d of currentWeekDays) {

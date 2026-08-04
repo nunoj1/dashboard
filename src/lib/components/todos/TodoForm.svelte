@@ -1,6 +1,5 @@
 <script lang="ts">
-	import CategoryInput from './CategoryInput.svelte';
-	import LocationInput from './LocationInput.svelte';
+	import AutocompleteInput from '$lib/components/ui/AutocompleteInput.svelte';
 	import { trpc } from '$lib/trpc/client';
 	import { onMount } from 'svelte';
 
@@ -125,11 +124,19 @@
 			<div class="grid grid-cols-2 gap-3">
 				<div>
 					<p class="label mb-1.5">Category</p>
-					<CategoryInput bind:value={category} categories={allCategories} />
+					<AutocompleteInput
+						bind:value={category}
+						options={allCategories}
+						placeholder="Category or type new..."
+					/>
 				</div>
 				<div>
 					<p class="label mb-1.5">Location</p>
-					<LocationInput bind:value={location} locations={allLocations} />
+					<AutocompleteInput
+						bind:value={location}
+						options={allLocations}
+						placeholder="Location or type new..."
+					/>
 				</div>
 			</div>
 

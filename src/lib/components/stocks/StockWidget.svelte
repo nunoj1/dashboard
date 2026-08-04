@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { trpc } from '$lib/trpc/client';
 	import { onMount } from 'svelte';
+	import { sparklineMetrics, SPARKLINE_W, SPARKLINE_H } from '$lib/utils/sparkline';
 
 	interface Ticker {
 		id: number;
@@ -70,32 +71,24 @@
 	}
 
 	function sparklinePath(data: number[]) {
-		if (data.length < 2) return '';
-		const min = Math.min(...data);
-		const max = Math.max(...data);
-		const range = max - min || 1;
-		const w = 120;
-		const h = 32;
-		const step = w / (data.length - 1);
+		const m = sparklineMetrics(data);
+		if (!m) return '';
+		const step = SPARKLINE_W / (data.length - 1);
 		return data
 			.map((v, i) => {
 				const x = i * step;
-				const y = h - ((v - min) / range) * h;
+				const y = SPARKLINE_H - ((v - m.min) / m.range) * SPARKLINE_H;
 				return `${i === 0 ? 'M' : 'L'}${x},${y}`;
 			})
 			.join(' ');
 	}
 
 	function getPointCoords(data: number[], idx: number) {
-		if (data.length < 2) return { x: 0, y: 0 };
-		const min = Math.min(...data);
-		const max = Math.max(...data);
-		const range = max - min || 1;
-		const w = 120;
-		const h = 32;
-		const step = w / (data.length - 1);
+		const m = sparklineMetrics(data);
+		if (!m) return { x: 0, y: 0 };
+		const step = SPARKLINE_W / (data.length - 1);
 		const x = idx * step;
-		const y = h - ((data[idx] - min) / range) * h;
+		const y = SPARKLINE_H - ((data[idx] - m.min) / m.range) * SPARKLINE_H;
 		return { x, y };
 	}
 

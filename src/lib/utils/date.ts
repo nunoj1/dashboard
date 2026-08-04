@@ -111,3 +111,28 @@ export function timeAgo(dateStr: string | null | Date): string {
 	if (diffDay < 7) return `${diffDay}d ago`;
 	return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
+
+export function getToday(): Date {
+	const d = new Date();
+	d.setHours(0, 0, 0, 0);
+	return d;
+}
+
+export function getMonthDays(
+	year: number,
+	month: number
+): { day: number; dateStr: string; label: string; isToday: boolean }[] {
+	const today = getToday();
+	const daysInMonth = new Date(year, month, 0).getDate();
+	const result = [];
+	for (let i = 1; i <= daysInMonth; i++) {
+		const date = new Date(year, month - 1, i);
+		result.push({
+			day: i,
+			dateStr: `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`,
+			label: date.toLocaleDateString('en-US', { weekday: 'narrow' }),
+			isToday: date.getTime() === today.getTime()
+		});
+	}
+	return result;
+}

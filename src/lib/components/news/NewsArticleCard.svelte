@@ -50,7 +50,7 @@
 			href={url}
 			target="_blank"
 			rel="noopener noreferrer"
-			class="block truncate text-xs font-medium text-zinc-200 transition hover:text-indigo-300"
+			class="line-clamp-2 block text-xs font-medium text-zinc-200 transition hover:text-indigo-300"
 			{title}
 		>
 			{title}

@@ -190,25 +190,7 @@ export const healthRouter = t.router({
 		await db.delete(habitEntries).where(eq(habitEntries.habitId, input.id));
 		await db.delete(habits).where(eq(habits.id, input.id));
 		return { id: input.id };
-	}),
-
-	getStats: t.procedure
-		.input(z.object({ period: z.enum(['7d', '30d', '90d', '1y']).default('30d') }))
-		.query(async ({ ctx }) => {
-			if (!ctx.user) return { habits: [] };
-			const allHabits = await db.select().from(habits).where(eq(habits.userId, ctx.user.id)).all();
-			const allEntries = await db.select().from(habitEntries).all();
-			const habitStats = allHabits.map((h) => {
-				const list = allEntries.filter((e) => e.habitId === h.id);
-				return {
-					...h,
-					currentStreak: calculateCurrentStreak(list),
-					longestStreak: calculateLongestStreak(list),
-					totalCompletions: list.filter((e) => e.completed === true).length
-				};
-			});
-			return { habits: habitStats };
-		})
+	})
 });
 
 export type HealthRouter = typeof healthRouter;
