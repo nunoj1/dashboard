@@ -32,15 +32,35 @@ function extractImageFromXml(itemXml: string): string | null {
 	return null;
 }
 
+function extractImageFromEntry(entryXml: string): string | null {
+	// Atom feeds often put images in <content> or <summary>
+	const contentMatch = entryXml.match(/<content[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/content>/i);
+	if (contentMatch) {
+		const img = contentMatch[1].match(/<img[^>]+src="([^"]+)"/i);
+		if (img) return img[1];
+	}
+	const summaryMatch = entryXml.match(/<summary[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/summary>/i);
+	if (summaryMatch) {
+		const img = summaryMatch[1].match(/<img[^>]+src="([^"]+)"/i);
+		if (img) return img[1];
+	}
+	const mediaThumbnail = entryXml.match(/<media:thumbnail[^>]+url="([^"]+)"/i);
+	if (mediaThumbnail) return mediaThumbnail[1];
+	return null;
+}
+
 function parseRss(xml: string, sourceName: string): RssItem[] {
 	const items: RssItem[] = [];
-	const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+	// Handle <item> with optional attributes (e.g., <item rdf:about="...">)
+	const itemRegex = /<item[^>]*>([\s\S]*?)<\/item>/g;
 	let match: RegExpExecArray | null;
 
 	while ((match = itemRegex.exec(xml)) !== null) {
 		const itemXml = match[1];
 		const titleMatch = itemXml.match(/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/);
+		// Handle <link>text</link> OR <link href="..."/>
 		const linkMatch = itemXml.match(/<link>(.*?)<\/link>/);
+		const linkHrefMatch = itemXml.match(/<link[^>]+href="([^"]+)"/);
 		const pubDateMatch = itemXml.match(/<pubDate>(.*?)<\/pubDate>/);
 		const sourceMatch = itemXml.match(
 			/<source(?:\s+url="[^"]*")?\s*>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/source>/
@@ -50,7 +70,7 @@ function parseRss(xml: string, sourceName: string): RssItem[] {
 		);
 
 		const title = titleMatch?.[1]?.trim() || '';
-		const link = linkMatch?.[1]?.trim() || '';
+		const link = linkMatch?.[1]?.trim() || linkHrefMatch?.[1]?.trim() || '';
 		const pubDate = pubDateMatch?.[1]?.trim() || '';
 		const source = sourceMatch?.[1]?.trim() || sourceName;
 		const description = descMatch?.[1]?.trim() || null;
@@ -70,10 +90,57 @@ function parseRss(xml: string, sourceName: string): RssItem[] {
 	return items;
 }
 
+function parseAtom(xml: string, sourceName: string): RssItem[] {
+	const items: RssItem[] = [];
+	const entryRegex = /<entry[^>]*>([\s\S]*?)<\/entry>/g;
+	let match: RegExpExecArray | null;
+
+	while ((match = entryRegex.exec(xml)) !== null) {
+		const entryXml = match[1];
+		const titleMatch = entryXml.match(/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/);
+		// Atom uses <link href="..."/>
+		const linkMatch = entryXml.match(/<link[^>]+href="([^"]+)"/);
+		// Atom dates: <updated> or <published>
+		const updatedMatch = entryXml.match(/<updated>(.*?)<\/updated>/);
+		const publishedMatch = entryXml.match(/<published>(.*?)<\/published>/);
+		// Atom descriptions: <summary> or <content>
+		const summaryMatch = entryXml.match(
+			/<summary>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/summary>/
+		);
+		const contentMatch = entryXml.match(
+			/<content>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/content>/
+		);
+
+		const title = titleMatch?.[1]?.trim() || '';
+		const link = linkMatch?.[1]?.trim() || '';
+		const pubDate = updatedMatch?.[1]?.trim() || publishedMatch?.[1]?.trim() || '';
+		const description = summaryMatch?.[1]?.trim() || contentMatch?.[1]?.trim() || null;
+
+		if (title && link) {
+			items.push({
+				title,
+				link,
+				pubDate,
+				source: sourceName,
+				imageUrl: extractImageFromEntry(entryXml),
+				description
+			});
+		}
+	}
+
+	return items;
+}
+
+function parseFeed(xml: string, sourceName: string): RssItem[] {
+	// Try RSS first, then Atom
+	const rssItems = parseRss(xml, sourceName);
+	if (rssItems.length > 0) return rssItems;
+	return parseAtom(xml, sourceName);
+}
+
 async function fetchSourceRss(
 	sourceUrl: string,
-	sourceName: string,
-	maxItems: number = 20
+	sourceName: string
 ): Promise<RssItem[]> {
 	const feedPaths = ['/rss.xml', '/feed', '/feed/', '/rss', '/index.xml', '/atom.xml'];
 	const base = sourceUrl.replace(/\/$/, '');
@@ -82,12 +149,12 @@ async function fetchSourceRss(
 		try {
 			const res = await fetch(base + path, {
 				headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
-				signal: AbortSignal.timeout(5000)
+				signal: AbortSignal.timeout(8000)
 			});
 			if (res.ok) {
 				const xml = await res.text();
-				const items = parseRss(xml, sourceName);
-				return items.slice(0, maxItems);
+				const items = parseFeed(xml, sourceName);
+				if (items.length > 0) return items;
 			}
 		} catch {
 			continue;
@@ -186,9 +253,9 @@ export const newsRouter = t.router({
 				.object({
 					timeRange: z.enum(['hour', 'day', 'week', 'month', 'all']).default('all'),
 					page: z.number().min(1).default(1),
-					limit: z.number().min(1).max(20).default(5)
+					limit: z.number().min(1).max(50).default(10)
 				})
-				.default({ timeRange: 'all', page: 1, limit: 5 })
+				.default({ timeRange: 'all', page: 1, limit: 10 })
 		)
 		.query(async ({ input, ctx }) => {
 			if (!ctx.user) return { items: [], total: 0, page: 1, totalPages: 0 };
@@ -201,10 +268,10 @@ export const newsRouter = t.router({
 
 			if (sources.length === 0) return { items: [], total: 0, page: 1, totalPages: 0 };
 
-			const MAX_PER_SOURCE = 20;
+			// Fetch ALL items from each source (no cap)
 			const allItems: RssItem[] = [];
 			for (const source of sources) {
-				const items = await fetchSourceRss(source.url, source.name, MAX_PER_SOURCE);
+				const items = await fetchSourceRss(source.url, source.name);
 				allItems.push(...items);
 			}
 

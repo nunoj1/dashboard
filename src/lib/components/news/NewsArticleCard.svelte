@@ -48,8 +48,6 @@
 			class="h-20 w-28 shrink-0 rounded-md object-cover"
 			loading="lazy"
 		/>
-	{:else}
-		<div class="h-20 w-28 shrink-0 rounded-md bg-zinc-900"></div>
 	{/if}
 
 	<div class="min-w-0 flex-1">
