@@ -45,8 +45,8 @@
 	{/if}
 
 	<div class="min-w-0 flex-1">
+		<!-- eslint-disable svelte/no-navigation-without-resolve -->
 		<a
-			// eslint-disable-next-line svelte/no-navigation-without-resolve
 			href={url}
 			target="_blank"
 			rel="noopener noreferrer"
@@ -56,10 +56,11 @@
 			{title}
 			<ExternalLink class="ml-0.5 inline h-3 w-3 text-zinc-600" />
 		</a>
+		<!-- eslint-enable svelte/no-navigation-without-resolve -->
 		<div class="mt-0.5 text-[10px] text-zinc-500">
 			{source} • {timeAgo(publishedAt)}
 		</div>
-		{#if cleanDesc}
+		{#if cleanDesc && !imageUrl}
 			<p class="mt-1 line-clamp-3 text-[11px] text-zinc-400" title={cleanDesc}>
 				{cleanDesc}
 			</p>
