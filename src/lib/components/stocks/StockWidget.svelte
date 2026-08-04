@@ -259,7 +259,7 @@
 		<p class="py-6 text-center text-sm text-zinc-600">No tickers yet. Add one below.</p>
 	{/if}
 
-	<form onsubmit={addTicker} class="separator flex flex-col gap-2 pt-3 h-fit bg-transparent">
+	<form onsubmit={addTicker} class="separator flex h-fit flex-col gap-2 bg-transparent pt-3">
 		<div class="flex flex-col gap-2 sm:flex-row">
 			<input
 				type="text"

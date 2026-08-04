@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import { timeAgo } from '$lib/utils/date';
 	import { ExternalLink, Bookmark, BookmarkCheck, Check, CheckCheck, X } from '@lucide/svelte';
 
@@ -42,16 +41,12 @@
 		: ''}"
 >
 	{#if imageUrl}
-		<img
-			src={imageUrl}
-			alt=""
-			class="h-20 w-28 shrink-0 rounded-md object-cover"
-			loading="lazy"
-		/>
+		<img src={imageUrl} alt="" class="h-20 w-28 shrink-0 rounded-md object-cover" loading="lazy" />
 	{/if}
 
 	<div class="min-w-0 flex-1">
 		<a
+			// eslint-disable-next-line svelte/no-navigation-without-resolve
 			href={url}
 			target="_blank"
 			rel="noopener noreferrer"

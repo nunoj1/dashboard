@@ -2,7 +2,7 @@
 
 > Your personal, self-hosted homepage. Dark mode only. One user. No bloat.
 
-A curated dashboard running on your VM — YouTube subscriptions, news, stocks, calendar, todos, health tracking, and lightweight AI insights. Built with SvelteKit, tRPC, Drizzle ORM, and SQLite.
+A curated dashboard running on your VM — News, stocks, calendar, todos, health tracking, and lightweight AI insights. Built with SvelteKit, tRPC, Drizzle ORM, and SQLite.
 
 ---
 
@@ -11,10 +11,10 @@ A curated dashboard running on your VM — YouTube subscriptions, news, stocks, 
 | Layer     | Choice                                                                |
 | --------- | --------------------------------------------------------------------- |
 | Framework | [SvelteKit](https://svelte.dev)                                       |
-| API       | [tRPC](https://trpc.io) + [Zod](https://zod.dev)                    |
+| API       | [tRPC](https://trpc.io) + [Zod](https://zod.dev)                      |
 | Database  | SQLite via [Drizzle ORM](https://orm.drizzle.team) + `@libsql/client` |
 | Auth      | [Clerk](https://clerk.com) (Google OAuth)                             |
-| Styling   | [Tailwind CSS](https://tailwindcss.com) v4                             |
+| Styling   | [Tailwind CSS](https://tailwindcss.com) v4                            |
 | Icons     | [Lucide](https://lucide.dev)                                          |
 | AI        | Rule-based insights (v1), optional LLM via Ollama (v2)                |
 
@@ -59,7 +59,9 @@ node build
 ```
 
 ---
+
 ## Architecture
+
 ```
 src/
 ├── lib/
@@ -68,6 +70,7 @@ src/
 │   │   ├── todos/
 │   │   ├── health/
 │   │   ├── stocks/
+│   │   ├── news/
 │   │   └── ui/
 │   ├── db/
 │   │   ├── schema/          # Drizzle schemas by domain
@@ -75,6 +78,7 @@ src/
 │   │   │   ├── todos.ts
 │   │   │   ├── stocks.ts
 │   │   │   ├── health.ts
+│   │   │   ├── news.ts
 │   │   │   └── users.ts
 │   │   └── index.ts         # DB connection
 │   ├── server/              # Server-only utilities
@@ -90,7 +94,7 @@ src/
 │   │       │   └── subtask.ts
 │   │       ├── stock.ts
 │   │       ├── health.ts
-│   │       └── todo.ts
+│   │       └── news.ts
 │   └── utils/
 │       └── date.ts
 ├── routes/
@@ -104,9 +108,10 @@ src/
 ---
 
 ## Component Design System
+
 ```
 All shared styles live in src/app.css as Tailwind @layer components:
-Table
+
 | Class                                         | Use                                                       |
 | --------------------------------------------- | --------------------------------------------------------- |
 | `.btn-primary`                                | Main CTAs (Add Habit, Add Todo, Add Stock, Modal Confirm) |
@@ -126,6 +131,7 @@ Table
 ## Build Checklist
 
 ### ✅ Phase 0: Bootstrap
+
 - [x] SvelteKit + TypeScript scaffold
 - [x] Tailwind CSS v4 (dark mode only)
 - [x] Drizzle ORM + SQLite (@libsql/client)
@@ -135,6 +141,7 @@ Table
 - [x] Node adapter for VM deployment
 
 ### ✅ Phase 1: tRPC + Data Layer
+
 - [x] tRPC router with superjson transformer
 - [x] SQLite database connection via Drizzle
 - [x] Schema split by domain (users.ts, todos.ts, stocks.ts, health.ts)
@@ -143,6 +150,7 @@ Table
 - [x] Router split by feature (todo/, stock.ts, health.ts)
 
 ### ✅ Phase 2: To-Do List (Expanded)
+
 - [x] Create / toggle / delete tasks
 - [x] Subtasks with progress bar and individual checkboxes
 - [x] Due dates with split date/time inputs
@@ -158,6 +166,7 @@ Table
 - [x] Date metadata: Due, Created, Completed
 
 ### ✅ Phase 3: Stock Ticker
+
 - [x] Yahoo Finance API integration (no key required)
 - [x] Live price + change % + sparkline chart
 - [x] Configurable tickers (add/remove)
@@ -166,6 +175,7 @@ Table
 - [x] Mini stock widget in bento layout
 
 ### ✅ Phase 4: Health Tracker
+
 - [x] Monthly habit grid (31-day view)
 - [x] Weekly habit grid (Mon–Sun, 7-day view)
 - [x] Responsive: monthly on desktop, weekly on mobile
@@ -176,38 +186,40 @@ Table
 - [x] Today button for quick navigation
 - [x] Delete habit with confirmation modal
 
-### ⏳ Phase 5: YouTube Feed
-- [ ] YouTube Data API integration
-- [ ] Fetch subscriptions
-- [ ] Cache latest videos in DB
-- [ ] Video card UI
-- [ ] Mark as watched
+### ✅ Phase 5: News Feeds
 
-### ⏳ Phase 6: News Feeds
-- [ ] NewsAPI integration (local / world / tech)
-- [ ] Article caching
-- [ ] News card UI
-- [ ] Mark as read
+- [x] RSS/Atom feed parsing with auto-discovery (/rss.xml, /feed, /atom.xml, etc.)
+- [x] Article caching in DB (save/unsave, mark read/unread)
+- [x] News card UI with images, descriptions, time-ago
+- [x] Source management: add, toggle active/inactive, remove
+- [x] Time range filters (1H / 1D / 1W / 1M / All)
+- [x] Feed search + saved articles search
+- [x] Infinite scroll with skeleton loading cards (widget-scoped)
 
-### ⏳ Phase 7: Calendar
+### ⏳ Phase 6: Calendar
+
 - [ ] Google Calendar API integration
 - [ ] Upcoming events list
 - [ ] Event caching
 
-### ⏳ Phase 8: Notifications
+### ⏳ Phase 7: Notifications
+
 - [ ] In-app notification center
 - [ ] Auto-generated alerts
 
-### ⏳ Phase 9: Feed Intelligence
+### ⏳ Phase 8: Feed Intelligence
+
 - [ ] Click/watch tracking
 - [ ] Simple relevance scoring
 - [ ] "Not interested" dismissals
 
-### ⏳ Phase 10: AI Insights
+### ⏳ Phase 9: AI Insights
+
 - [ ] Rule-based daily briefing
 - [ ] Optional LLM via Ollama
 
-### ⏳ Phase 11: Polish & Deploy
+### ⏳ Phase 10: Polish & Deploy
+
 - [ ] Responsive layout
 - [ ] Loading skeletons
 - [ ] Docker / systemd on VM
@@ -220,18 +232,33 @@ Table
 - **Dark mode only.** No light mode toggle. `html` has `class="dark"` and `color-scheme: dark`.
 - **Neutral palette.** `zinc` grays to match Clerk's dark theme.
 - **Accent system:**
-    - Primary CTA: violet (Add buttons, Confirm)
-    - Navigation: purple family (arrows, pagination, Today)
-    - Toggles: violet family at lower intensity (Monthly/Weekly, Active/History, range selectors)
-    - Habit checkboxes: indigo/emerald/sky/amber/rose/violet per habit
-    - Urgency: red → purple → orange → amber → sky → zinc
-    
+  - Primary CTA: violet (Add buttons, Confirm)
+  - Navigation: purple family (arrows, pagination, Today)
+  - Toggles: violet family at lower intensity (Monthly/Weekly, Active/History, range selectors)
+  - Habit checkboxes: indigo/emerald/sky/amber/rose/violet per habit
+  - Urgency: red → purple → orange → amber → sky → zinc
+
 - **Layout:** Bento-box grid. Cards with rounded corners, subtle borders, soft shadows.
 - **Code organization:** Components, tRPC routers, and DB schemas all split by feature/domain.
 - **CSS architecture:** All recurring UI patterns abstracted into app.css component classes. No raw Tailwind duplication for buttons, inputs, badges, or separators.
 
 ---
 
+## Scripts
+
+| Command            | Description                          |
+| ------------------ | ------------------------------------ |
+| `pnpm dev`         | Start Vite dev server                |
+| `pnpm build`       | Production build                     |
+| `pnpm preview`     | Preview production build             |
+| `pnpm lint`        | Prettier check + ESLint              |
+| `pnpm format`      | Prettier fix all files               |
+| `pnpm db:generate` | Generate Drizzle migrations          |
+| `pnpm db:migrate`  | Run Drizzle migrations               |
+| `pnpm db:studio`   | Open Drizzle Studio GUI              |
+| `pnpm check`       | Run `svelte-check` for type checking |
+
+---
 ## License
 
 Personal use only. This is a single-user self-hosted dashboard.

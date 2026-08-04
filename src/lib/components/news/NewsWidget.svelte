@@ -67,6 +67,7 @@
 		try {
 			const articles = await trpc().news.getSaved.query({ includeRead: showRead, limit: 50 });
 			saved = articles;
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity
 			savedUrls = new Set(articles.map((a) => a.url));
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load saved';
@@ -258,7 +259,7 @@
 
 		<!-- Time filter -->
 		<div class="card-inner flex w-full gap-1 p-1">
-			{#each [['hour', '1H'], ['day', '1D'], ['week', '1W'], ['month', '1M'], ['all', 'All']] as [val, label]}
+			{#each [['hour', '1H'], ['day', '1D'], ['week', '1W'], ['month', '1M'], ['all', 'All']] as [val, label] (val)}
 				<button
 					onclick={() => setTimeRange(val as typeof timeRange)}
 					class="flex-1 {timeRange === val ? 'btn-toggle-active' : 'btn-toggle-inactive'}"
@@ -308,6 +309,7 @@
 					/>
 				{/each}
 				{#if loadingFeed}
+					<!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
 					{#each Array(3) as _, i (i)}
 						<SkeletonArticleCard />
 					{/each}
@@ -318,6 +320,7 @@
 			</div>
 		{:else if loadingFeed}
 			<div class="max-h-96 space-y-2 overflow-y-auto pr-1">
+				<!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
 				{#each Array(5) as _, i (i)}
 					<SkeletonArticleCard />
 				{/each}

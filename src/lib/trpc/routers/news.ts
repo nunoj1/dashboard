@@ -34,12 +34,16 @@ function extractImageFromXml(itemXml: string): string | null {
 
 function extractImageFromEntry(entryXml: string): string | null {
 	// Atom feeds often put images in <content> or <summary>
-	const contentMatch = entryXml.match(/<content[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/content>/i);
+	const contentMatch = entryXml.match(
+		/<content[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/content>/i
+	);
 	if (contentMatch) {
 		const img = contentMatch[1].match(/<img[^>]+src="([^"]+)"/i);
 		if (img) return img[1];
 	}
-	const summaryMatch = entryXml.match(/<summary[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/summary>/i);
+	const summaryMatch = entryXml.match(
+		/<summary[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/summary>/i
+	);
 	if (summaryMatch) {
 		const img = summaryMatch[1].match(/<img[^>]+src="([^"]+)"/i);
 		if (img) return img[1];
@@ -104,12 +108,8 @@ function parseAtom(xml: string, sourceName: string): RssItem[] {
 		const updatedMatch = entryXml.match(/<updated>(.*?)<\/updated>/);
 		const publishedMatch = entryXml.match(/<published>(.*?)<\/published>/);
 		// Atom descriptions: <summary> or <content>
-		const summaryMatch = entryXml.match(
-			/<summary>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/summary>/
-		);
-		const contentMatch = entryXml.match(
-			/<content>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/content>/
-		);
+		const summaryMatch = entryXml.match(/<summary>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/summary>/);
+		const contentMatch = entryXml.match(/<content>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/content>/);
 
 		const title = titleMatch?.[1]?.trim() || '';
 		const link = linkMatch?.[1]?.trim() || '';
@@ -138,10 +138,7 @@ function parseFeed(xml: string, sourceName: string): RssItem[] {
 	return parseAtom(xml, sourceName);
 }
 
-async function fetchSourceRss(
-	sourceUrl: string,
-	sourceName: string
-): Promise<RssItem[]> {
+async function fetchSourceRss(sourceUrl: string, sourceName: string): Promise<RssItem[]> {
 	const feedPaths = ['/rss.xml', '/feed', '/feed/', '/rss', '/index.xml', '/atom.xml'];
 	const base = sourceUrl.replace(/\/$/, '');
 
